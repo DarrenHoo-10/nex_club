@@ -1,0 +1,125 @@
+[
+  {
+    "id": "claude",
+    "name": "Claude",
+    "url": "https://claude.ai",
+    "desc": "Anthropic 出品的 AI 助手，擅长长文写作、代码与文档分析。",
+    "tags": [
+      "对话",
+      "编程",
+      "写作"
+    ],
+    "pricing": "免费 + 付费",
+    "featured": true
+  },
+  {
+    "id": "chatgpt",
+    "name": "ChatGPT",
+    "url": "https://chatgpt.com",
+    "desc": "OpenAI 的通用对话助手，支持联网搜索、图像理解与数据分析。",
+    "tags": [
+      "对话",
+      "多模态"
+    ],
+    "pricing": "免费 + 付费",
+    "featured": true
+  },
+  {
+    "id": "perplexity",
+    "name": "Perplexity",
+    "url": "https://www.perplexity.ai",
+    "desc": "带引用来源的 AI 搜索引擎，适合快速调研与事实核查。",
+    "tags": [
+      "搜索",
+      "调研"
+    ],
+    "pricing": "免费 + 付费",
+    "featured": true
+  },
+  {
+    "id": "notebooklm",
+    "name": "NotebookLM",
+    "url": "https://notebooklm.google.com",
+    "desc": "上传资料后基于你的文档问答、总结，还能生成音频播客式概览。",
+    "tags": [
+      "学习",
+      "文档",
+      "调研"
+    ],
+    "pricing": "免费 + 付费",
+    "featured": true
+  },
+  {
+    "id": "midjourney",
+    "name": "Midjourney",
+    "url": "https://www.midjourney.com",
+    "desc": "风格感很强的 AI 绘图工具，适合概念设计与插画。",
+    "tags": [
+      "图像",
+      "设计"
+    ],
+    "pricing": "付费",
+    "featured": false
+  },
+  {
+    "id": "cursor",
+    "name": "Cursor",
+    "url": "https://cursor.com",
+    "desc": "内置 AI 的代码编辑器，可对整个代码库提问、改写与生成。",
+    "tags": [
+      "编程",
+      "效率"
+    ],
+    "pricing": "免费 + 付费",
+    "featured": true
+  },
+  {
+    "id": "huggingface",
+    "name": "Hugging Face",
+    "url": "https://huggingface.co",
+    "desc": "开源模型、数据集与 Spaces 在线 Demo 的集散地。",
+    "tags": [
+      "开源",
+      "模型",
+      "社区"
+    ],
+    "pricing": "免费 + 付费",
+    "featured": false
+  },
+  {
+    "id": "suno",
+    "name": "Suno",
+    "url": "https://suno.com",
+    "desc": "输入一句话或歌词，生成带人声的完整歌曲。",
+    "tags": [
+      "音频",
+      "创作"
+    ],
+    "pricing": "免费 + 付费",
+    "featured": false
+  },
+  {
+    "id": "elevenlabs",
+    "name": "ElevenLabs",
+    "url": "https://elevenlabs.io",
+    "desc": "高质量文字转语音与声音克隆，适合配音与有声内容。",
+    "tags": [
+      "音频",
+      "配音"
+    ],
+    "pricing": "免费 + 付费",
+    "featured": false
+  },
+  {
+    "id": "gamma",
+    "name": "Gamma",
+    "url": "https://gamma.app",
+    "desc": "用一段提示词生成演示文稿、文档与网页。",
+    "tags": [
+      "效率",
+      "演示"
+    ],
+    "pricing": "免费 + 付费",
+    "featured": false
+  }
+]

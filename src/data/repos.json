@@ -1,0 +1,102 @@
+[
+  {
+    "id": "ollama",
+    "repo": "ollama/ollama",
+    "desc": "一条命令在本地运行 Llama、Qwen、Gemma 等开源大模型。",
+    "tags": [
+      "本地部署",
+      "大模型"
+    ],
+    "lang": "Go",
+    "featured": true
+  },
+  {
+    "id": "llama-cpp",
+    "repo": "ggml-org/llama.cpp",
+    "desc": "纯 C/C++ 的 LLM 推理引擎，量化后可在普通笔记本上跑模型。",
+    "tags": [
+      "本地部署",
+      "推理"
+    ],
+    "lang": "C++",
+    "featured": false
+  },
+  {
+    "id": "open-webui",
+    "repo": "open-webui/open-webui",
+    "desc": "自托管的 ChatGPT 风格界面，可对接 Ollama 与各类 OpenAI 兼容接口。",
+    "tags": [
+      "界面",
+      "自托管"
+    ],
+    "lang": "Svelte",
+    "featured": false
+  },
+  {
+    "id": "comfyui",
+    "repo": "comfyanonymous/ComfyUI",
+    "desc": "节点式的 Stable Diffusion 工作流工具，可自由组合图像生成流程。",
+    "tags": [
+      "图像",
+      "工作流"
+    ],
+    "lang": "Python",
+    "featured": true
+  },
+  {
+    "id": "n8n",
+    "repo": "n8n-io/n8n",
+    "desc": "可自托管的工作流自动化平台，内置 AI Agent 与大量集成。",
+    "tags": [
+      "自动化",
+      "Agent"
+    ],
+    "lang": "TypeScript",
+    "featured": true
+  },
+  {
+    "id": "dify",
+    "repo": "langgenius/dify",
+    "desc": "开源的 LLM 应用开发平台，可视化编排 RAG、Agent 与工作流。",
+    "tags": [
+      "Agent",
+      "RAG",
+      "平台"
+    ],
+    "lang": "TypeScript",
+    "featured": true
+  },
+  {
+    "id": "langchain",
+    "repo": "langchain-ai/langchain",
+    "desc": "构建 LLM 应用与 Agent 的经典框架，提供丰富的组件与集成。",
+    "tags": [
+      "框架",
+      "Agent"
+    ],
+    "lang": "Python",
+    "featured": false
+  },
+  {
+    "id": "markitdown",
+    "repo": "microsoft/markitdown",
+    "desc": "把 PDF、Word、PPT、Excel 等文件转成 Markdown，方便喂给 LLM。",
+    "tags": [
+      "文档",
+      "工具"
+    ],
+    "lang": "Python",
+    "featured": false
+  },
+  {
+    "id": "browser-use",
+    "repo": "browser-use/browser-use",
+    "desc": "让 AI Agent 直接操作浏览器完成网页任务。",
+    "tags": [
+      "Agent",
+      "浏览器"
+    ],
+    "lang": "Python",
+    "featured": false
+  }
+]
