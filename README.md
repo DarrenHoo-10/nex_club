@@ -2,6 +2,12 @@
 
 AI 工具网站 · AI焚决集合 · 有价值的 AI GitHub 项目 的前端原型（Vite + React，中文界面）。
 
+## 项目方案
+
+[Go 后端实施方案](docs/backend-implementation-plan.md)覆盖内容服务、数据模型、排序搜索、管理后台，以及参考 AIHOT 的采集加工流程和分阶段验收。该文档为实施草案，当前项目仍为前端原型。
+
+[数据库表结构设计](docs/database-schema.md)细化两阶段的字段、主外键、索引、关系图、发布事务与建表顺序。
+
 ```bash
 npm install
 npm run dev     # http://localhost:5173
