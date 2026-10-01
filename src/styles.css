@@ -145,8 +145,13 @@ button.pill:hover { color: var(--text); background: var(--glass-hi); }
 
 /* filters + list */
 .filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0 auto 36px; max-width: 760px; }
-.list-title { margin: 0 0 22px; text-align: center; font-size: 22px; letter-spacing: -.01em; }
-.grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; }
+.list-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
+.list-title { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+.sort-control { display: flex; flex: none; gap: 4px; margin-left: auto; padding: 4px; border-radius: 14px; }
+.sort-button { min-height: 36px; padding: 6px 18px; border-radius: 10px; color: var(--muted); font-size: 14px; font-weight: 500; transition: background .2s, color .2s, box-shadow .2s; }
+.sort-button:hover { background: var(--pill-bg); color: var(--text); }
+.sort-button.on { background: var(--ink-btn); color: var(--bg-a); box-shadow: 0 2px 8px var(--glass-shadow); }
+.grid { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 22px; }
 .card {
   width: calc((100% - 44px) / 3); display: flex; flex-direction: column; padding: 10px; border-radius: 24px;
   animation: rise .5s ease both; transition: transform .25s, box-shadow .25s;
@@ -252,6 +257,8 @@ button.pill:hover { color: var(--text); background: var(--glass-hi); }
   .tabs { width: 100%; overflow-x: auto; justify-content: space-between; }
   .tab { padding: 7px 10px; font-size: 13px; }
   .hero { padding-top: 40px; }
+  .list-title { font-size: 20px; }
+  .sort-button { min-height: 44px; padding-inline: 14px; }
   .card { width: 100%; }
   .car-nav { display: none; }
   .car-track { --sw: 92%; --gap: 14px; }

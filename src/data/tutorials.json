@@ -1,6 +1,8 @@
 [
   {
     "id": "claude-subscribe",
+    "heat": 4200,
+    "addedAt": "2026-09-12T12:00:00Z",
     "title": "如何订阅 Claude 会员",
     "summary": "从注册账号到开通 Pro 套餐的完整流程，以及选套餐时该看什么。",
     "tags": [
@@ -22,6 +24,8 @@
   },
   {
     "id": "secure-website",
+    "heat": 2800,
+    "addedAt": "2026-09-16T12:00:00Z",
     "title": "如何搭建一个安全的网站",
     "summary": "给个人开发者的最小安全清单：HTTPS、依赖、密钥、权限与备份。",
     "tags": [
@@ -45,6 +49,8 @@
   },
   {
     "id": "ollama-local",
+    "heat": 5600,
+    "addedAt": "2026-09-20T12:00:00Z",
     "title": "用 Ollama 在本地跑大模型",
     "summary": "十分钟在自己电脑上运行开源模型，数据不出本机。",
     "tags": [
@@ -66,6 +72,8 @@
   },
   {
     "id": "prompt-basics",
+    "heat": 6100,
+    "addedAt": "2026-09-10T12:00:00Z",
     "title": "写好提示词的五个习惯",
     "summary": "不靠玄学，让模型一次就答对的通用写法。",
     "tags": [
@@ -86,6 +94,8 @@
   },
   {
     "id": "n8n-automation",
+    "heat": 3900,
+    "addedAt": "2026-09-27T12:00:00Z",
     "title": "用 n8n 搭建第一个 AI 自动化流程",
     "summary": "监听新邮件或表单，交给 LLM 处理，再自动写入表格或发通知。",
     "tags": [
@@ -108,6 +118,8 @@
   },
   {
     "id": "cursor-start",
+    "heat": 4800,
+    "addedAt": "2026-09-30T12:00:00Z",
     "title": "Cursor 上手：让 AI 帮你改代码",
     "summary": "从安装到用 Chat、Agent 与规则文件完成一个小功能。",
     "tags": [

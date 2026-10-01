@@ -1,6 +1,8 @@
 [
   {
     "id": "claude",
+    "heat": 9600,
+    "addedAt": "2026-09-12T12:00:00Z",
     "name": "Claude",
     "url": "https://claude.ai",
     "desc": "Anthropic 出品的 AI 助手，擅长长文写作、代码与文档分析。",
@@ -14,6 +16,8 @@
   },
   {
     "id": "chatgpt",
+    "heat": 9800,
+    "addedAt": "2026-09-10T12:00:00Z",
     "name": "ChatGPT",
     "url": "https://chatgpt.com",
     "desc": "OpenAI 的通用对话助手，支持联网搜索、图像理解与数据分析。",
@@ -26,6 +30,8 @@
   },
   {
     "id": "perplexity",
+    "heat": 8100,
+    "addedAt": "2026-09-15T12:00:00Z",
     "name": "Perplexity",
     "url": "https://www.perplexity.ai",
     "desc": "带引用来源的 AI 搜索引擎，适合快速调研与事实核查。",
@@ -38,6 +44,8 @@
   },
   {
     "id": "notebooklm",
+    "heat": 7900,
+    "addedAt": "2026-09-26T12:00:00Z",
     "name": "NotebookLM",
     "url": "https://notebooklm.google.com",
     "desc": "上传资料后基于你的文档问答、总结，还能生成音频播客式概览。",
@@ -51,6 +59,8 @@
   },
   {
     "id": "midjourney",
+    "heat": 8500,
+    "addedAt": "2026-09-14T12:00:00Z",
     "name": "Midjourney",
     "url": "https://www.midjourney.com",
     "desc": "风格感很强的 AI 绘图工具，适合概念设计与插画。",
@@ -63,6 +73,8 @@
   },
   {
     "id": "cursor",
+    "heat": 9200,
+    "addedAt": "2026-09-28T12:00:00Z",
     "name": "Cursor",
     "url": "https://cursor.com",
     "desc": "内置 AI 的代码编辑器，可对整个代码库提问、改写与生成。",
@@ -75,6 +87,8 @@
   },
   {
     "id": "huggingface",
+    "heat": 8800,
+    "addedAt": "2026-09-18T12:00:00Z",
     "name": "Hugging Face",
     "url": "https://huggingface.co",
     "desc": "开源模型、数据集与 Spaces 在线 Demo 的集散地。",
@@ -88,6 +102,8 @@
   },
   {
     "id": "suno",
+    "heat": 7600,
+    "addedAt": "2026-09-22T12:00:00Z",
     "name": "Suno",
     "url": "https://suno.com",
     "desc": "输入一句话或歌词，生成带人声的完整歌曲。",
@@ -100,6 +116,8 @@
   },
   {
     "id": "elevenlabs",
+    "heat": 7200,
+    "addedAt": "2026-09-24T12:00:00Z",
     "name": "ElevenLabs",
     "url": "https://elevenlabs.io",
     "desc": "高质量文字转语音与声音克隆，适合配音与有声内容。",
@@ -112,6 +130,8 @@
   },
   {
     "id": "gamma",
+    "heat": 6900,
+    "addedAt": "2026-09-30T12:00:00Z",
     "name": "Gamma",
     "url": "https://gamma.app",
     "desc": "用一段提示词生成演示文稿、文档与网页。",

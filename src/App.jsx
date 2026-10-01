@@ -9,6 +9,12 @@ import Logo from './components/Logo.jsx'
 
 const host = (url) => new URL(url).hostname.replace('www.', '')
 
+const SORT_OPTIONS = [
+  { key: 'recommended', label: '推荐', title: '按编辑推荐顺序' },
+  { key: 'heat', label: '热度', title: '按热度从高到低' },
+  { key: 'latest', label: '最新', title: '按收录时间从新到旧' },
+]
+
 const SECTIONS = [
   {
     key: 'tools',
@@ -48,6 +54,7 @@ export default function App() {
   const [active, setActive] = useState(readHash)
   const [query, setQuery] = useState('')
   const [tag, setTag] = useState('')
+  const [sort, setSort] = useState('recommended')
   const [reading, setReading] = useState(null)
   const searchRef = useRef(null)
 
@@ -83,11 +90,14 @@ export default function App() {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return section.items.filter((item) => {
+    const filtered = section.items.filter((item) => {
       if (tag && !item.tags.includes(tag)) return false
       return !q || section.fields(item).join(' ').toLowerCase().includes(q)
     })
-  }, [section, query, tag])
+    if (sort === 'heat') return filtered.sort((a, b) => (b.heat ?? 0) - (a.heat ?? 0))
+    if (sort === 'latest') return filtered.sort((a, b) => (Date.parse(b.addedAt) || 0) - (Date.parse(a.addedAt) || 0))
+    return filtered
+  }, [section, query, tag, sort])
 
   const itemProps = (item) => {
     if (active === 'tools')
@@ -161,8 +171,24 @@ export default function App() {
           ))}
         </div>
 
-        <h2 className="list-title">{searching ? `找到 ${results.length} 项` : `全部${section.label}`}</h2>
-        <section className="grid">
+        <div className="list-toolbar">
+          <h2 id="list-title" className="list-title" aria-live="polite">{searching ? `找到 ${results.length} 项` : `全部${section.label}`}</h2>
+          <div className="sort-control pill-glass" role="group" aria-label="排序方式">
+            {SORT_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={sort === option.key ? 'sort-button on' : 'sort-button'}
+                aria-pressed={sort === option.key}
+                title={option.title}
+                onClick={() => setSort(option.key)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <section className="grid" aria-labelledby="list-title">
           {results.map((item, i) => (
             <Card key={item.id} item={item} kind={section.kind} index={i} onTag={setTag} {...itemProps(item)} />
           ))}
@@ -170,7 +196,7 @@ export default function App() {
         {results.length === 0 && <p className="empty">没有找到匹配的内容，换个关键词试试。</p>}
       </main>
 
-      <footer className="footer">Nex Club · 原型演示 · 示例数据位于 src/data</footer>
+      <footer className="footer">Nex Club · 原型演示 · 热度与收录时间为示例数据</footer>
       {reading && <Reader item={reading} onClose={() => setReading(null)} />}
     </div>
   )
