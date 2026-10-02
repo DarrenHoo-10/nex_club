@@ -77,3 +77,7 @@ go build -o bin/worker ./cmd/worker
 ## 内容管理插件
 
 独立插件仓库：[nex-club-plugin](https://github.com/DarrenHoo-10/nex-club-plugin)。本仓库保留开发副本 [`plugins/nex-club`](plugins/nex-club/README.md)，将 MCP 与 `manage-content` Skill 打包，直接在 Codex 对话中研究素材、整理草稿、预览及执行发布/采集工作流。后台入口为 `/admin/automation/mcp`，用于令牌管理与操作检查，不再提供独立 AI 聊天页。MCP 地址为 `/mcp`；权限、确认和幂等契约见 [设计说明](docs/designs/12-mcp-plugin.md)。
+
+## 首尔生产环境
+
+站点：[club.nexorai.com.cn](https://club.nexorai.com.cn)；后台：[/admin](https://club.nexorai.com.cn/admin)；MCP：`https://club.nexorai.com.cn/mcp`。生产环境使用独立空库，首次上线的 18 个示范信源均暂停。部署结构、升级和备份见 [生产部署说明](deploy/README.md)。

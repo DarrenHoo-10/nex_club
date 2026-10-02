@@ -4,7 +4,7 @@
 
 ## 连接本地项目
 
-1. 启动 Nex Club API，默认开发入口为 `http://localhost:8089`。
+1. 打开已部署的 [Nex Club](https://club.nexorai.com.cn)，进入 [后台 MCP 接入](https://club.nexorai.com.cn/admin/automation/mcp)。
 2. 在后台「自动化 → MCP 接入」创建令牌。默认只读；需要 AI 准备操作时打开准备权限，需要在 AI 客户端执行时再打开执行权限。
 3. 把令牌放入启动 Codex 的环境变量 `NEX_CLUB_MCP_TOKEN`，确保 Codex 进程继承该变量。不要写进插件文件、Git 或聊天内容。
 4. 在仓库根目录把本地市场加入 Codex，再安装：
@@ -16,7 +16,7 @@ codex plugin add nex-club@nex-club-local
 
 也可以在应用的插件目录中找到本项目提供的 Nex Club。安装后新建对话加载插件。首次可以要求：“用 Nex Club 插件看看有哪些草稿，先不修改。”
 
-`.mcp.json` 默认连接本地地址。连接已部署的服务时，把 `url` 改为该实例的 HTTPS `/mcp` 地址，再打包/安装；不要把生产令牌放入配置。
+`.mcp.json` 默认连接 `https://club.nexorai.com.cn/mcp`。本地开发时，可将 `url` 改为 `http://localhost:8089/mcp` 后再打包/安装；不要把令牌写入配置。
 
 ## 使用
 

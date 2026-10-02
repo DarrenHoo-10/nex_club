@@ -1,9 +1,11 @@
 {
   "name": "nex-club",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "在 AI 对话中研究素材、编辑 Nex Club 草稿，并预览、发布和管理采集工作流。",
-  "author": { "name": "Nex Club" },
-  "repository": "https://github.com/DarrenHoo-10/nex_club",
+  "author": {
+    "name": "Nex Club"
+  },
+  "repository": "https://github.com/DarrenHoo-10/nex-club-plugin",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
@@ -12,8 +14,14 @@
     "longDescription": "连接 Nex Club 内容库与自动化中心，在现有 AI 对话中完成素材研究、草稿编辑、标签整理、发布及采集任务管理。",
     "developerName": "Nex Club",
     "category": "Productivity",
-    "capabilities": ["Read", "Write"],
-    "defaultPrompt": ["和我讨论这份素材，先拟定文章结构。", "把讨论结果整理成 Nex Club 草稿，预览后再发布。"],
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "和我讨论这份素材，先拟定文章结构。",
+      "把讨论结果整理成 Nex Club 草稿，预览后再发布。"
+    ],
     "brandColor": "#3C5FFF"
   }
 }
