@@ -1,0 +1,63 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: nex
+          POSTGRES_PASSWORD: nex
+          POSTGRES_DB: nex_tests
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nex -d nex_tests"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: server/go.sum
+      - name: initialize isolated test schema
+        working-directory: server
+        env:
+          NEX_TEST_DATABASE_URL: postgres://nex:nex@127.0.0.1:5432/nex_tests?sslmode=disable
+        run: go test -count=1 ./internal/integration -run '^TestSchemaBaselines$'
+      - name: test
+        working-directory: server
+        env:
+          NEX_TEST_DATABASE_URL: postgres://nex:nex@127.0.0.1:5432/nex_tests?sslmode=disable
+        run: go test -count=1 -p 1 ./...
+      - name: migration round trip after other tests finish
+        working-directory: server
+        env:
+          NEX_TEST_DATABASE_URL: postgres://nex:nex@127.0.0.1:5432/nex_tests?sslmode=disable
+          NEX_TEST_MIGRATE_DOWN: "1"
+        run: go test -count=1 ./internal/integration -run '^TestMigrateDownAndUp$'
+      - name: sqlc diff
+        working-directory: server
+        run: |
+          for config in sqlc.yaml sqlc.*.yaml; do
+            go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0 -f "$config" diff
+          done
+
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build

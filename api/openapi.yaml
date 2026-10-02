@@ -1,0 +1,1168 @@
+openapi: 3.1.0
+info:
+  title: Nex Club API
+  version: 0.1.0
+  summary: 内容服务公开接口与管理接口。未实现的路径返回 501，code 为 not_implemented。
+servers:
+  - url: /
+paths:
+  /health/live:
+    get:
+      operationId: live
+      tags: [health]
+      responses:
+        "200":
+          description: 进程存活，不访问数据库
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /health/ready:
+    get:
+      operationId: ready
+      tags: [health]
+      responses:
+        "200":
+          description: 数据库可连接
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: 数据库不可用
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /api/v1/resources:
+    get:
+      operationId: listResources
+      tags: [public]
+      parameters:
+        - $ref: "#/components/parameters/kind"
+        - name: q
+          in: query
+          schema: { type: string, default: "" }
+        - name: tag
+          in: query
+          description: 重复参数表示交集，最多 8 个
+          schema: { type: string }
+          style: form
+          explode: true
+        - name: sort
+          in: query
+          schema: { $ref: "#/components/schemas/Sort" }
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        "200":
+          description: 资源页
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResourcePage" }
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/resources/by-slug/{slug}:
+    get:
+      operationId: getResourceBySlug
+      tags: [public]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 已发布详情
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResourceDetail" }
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/resources/{id}:
+    get:
+      operationId: getResource
+      tags: [public]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+      responses:
+        "200":
+          description: 已发布详情
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResourceDetail" }
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/tags:
+    get:
+      operationId: listTags
+      tags: [public]
+      parameters:
+        - $ref: "#/components/parameters/kind"
+        - name: q
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: 标签计数。计数只受 kind 和 q 影响。
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tags]
+                properties:
+                  tags:
+                    type: array
+                    items: { $ref: "#/components/schemas/TagCount" }
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/featured:
+    get:
+      operationId: listFeatured
+      tags: [public]
+      parameters:
+        - $ref: "#/components/parameters/kind"
+      responses:
+        "200":
+          description: 当前生效的推荐位
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeaturedPage" }
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/events:
+    post:
+      operationId: postEvents
+      tags: [public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventBatch" }
+      responses:
+        "202":
+          description: 已接受的事件
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EventResult" }
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/session:
+    post:
+      operationId: login
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: 登录成功，设置 nex_session 与 nex_csrf
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminSession" }
+        default:
+          $ref: "#/components/responses/Error"
+    get:
+      operationId: currentAdmin
+      tags: [admin]
+      responses:
+        "200":
+          description: 当前会话，不返回令牌
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminSession" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: logout
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      responses:
+        "204":
+          description: 已登出
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/resources:
+    get:
+      operationId: listAdminResources
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/kind"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/Status" }
+        - name: q
+          in: query
+          schema: { type: string }
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createResource
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/resources/{id}:
+    get:
+      operationId: getAdminResource
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      operationId: saveResource
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/resources/{id}/revisions:
+    get:
+      operationId: listResourceRevisions
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/resources/{id}/preview:
+    get:
+      operationId: previewResource
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+      responses:
+        "200":
+          description: 草稿预览，形状与公开详情相同
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResourceDetail" }
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/resources/{id}/publish:
+    post:
+      operationId: publishResource
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [edit_version, revision_id]
+              properties:
+                edit_version: { type: integer }
+                revision_id: { type: string, format: uuid }
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/resources/{id}/visibility:
+    post:
+      operationId: setResourceVisibility
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [edit_version, status, reason]
+              properties:
+                edit_version: { type: integer }
+                status: { $ref: "#/components/schemas/Status" }
+                reason: { type: string }
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/tags:
+    get:
+      operationId: listAdminTags
+      tags: [admin]
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createTag
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/tags/{id}/merge:
+    post:
+      operationId: mergeTag
+      tags: [admin]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/featured:
+    get:
+      operationId: listAdminFeatured
+      tags: [admin]
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createFeatured
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/featured/{id}:
+    delete:
+      operationId: disableFeatured
+      tags: [admin]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/audit:
+    get:
+      operationId: listAudit
+      tags: [admin]
+      parameters:
+        - name: target_type
+          in: query
+          schema: { type: string }
+        - name: target_id
+          in: query
+          schema: { type: string }
+      responses:
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/automation:
+    get:
+      operationId: automationOverview
+      tags: [admin, automation]
+      summary: 运行概览与公开的模型配置
+      security: [{adminSession: []}]
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/sources:
+    get:
+      operationId: listSources
+      tags: [admin, automation]
+      summary: 分页列出信源（不返回凭据）
+      security: [{adminSession: []}]
+      parameters:
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 1000000, default: 0}
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationPage"}
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createSource
+      tags: [admin, automation]
+      summary: 创建信源，不立即采集
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AutomationSourceInput"}
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/sources/{id}:
+    put:
+      operationId: updateSource
+      tags: [admin, automation]
+      summary: 按 edit_version 更新信源；变更采集地址会清空旧检查点
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AutomationSourceInput"}
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/sources/{id}/run:
+    post:
+      operationId: queueSource
+      tags: [admin, automation]
+      summary: 立即采集；已有活跃采集任务时返回 409
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AutomationVersionInput"}
+      responses:
+        "202":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/automation/ingest-runs:
+    get:
+      operationId: listIngestRuns
+      tags: [admin, automation]
+      summary: 分页查询采集任务，支持 status 和 source_id
+      security: [{adminSession: []}]
+      parameters:
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 1000000, default: 0}
+        - name: status
+          in: query
+          schema: {type: string}
+        - name: source_id
+          in: query
+          schema: {type: string}
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationPage"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/automation/processing-runs:
+    get:
+      operationId: listProcessingRuns
+      tags: [admin, automation]
+      summary: 分页查询加工阶段，支持 status 和 source_id
+      security: [{adminSession: []}]
+      parameters:
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 1000000, default: 0}
+        - name: status
+          in: query
+          schema: {type: string}
+        - name: source_id
+          in: query
+          schema: {type: string}
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationPage"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/automation/processing-runs/{id}:
+    get:
+      operationId: processingContext
+      tags: [admin, automation]
+      summary: 原始资料与同轮次阶段；正文最多返回 30000 字符
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/automation/processing-runs/{id}/retry:
+    post:
+      operationId: retryProcessing
+      tags: [admin, automation]
+      summary: 沿用冻结计划重试；未确认调用或活跃任务会阻止重试
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AutomationEmpty"}
+      responses:
+        "202":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/automation/processing-runs/{id}/rerun:
+    post:
+      operationId: rerunProcessing
+      tags: [admin, automation]
+      summary: 显式新建加工轮次，使用当前模型配置；可能产生费用
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AutomationEmpty"}
+      responses:
+        "202":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/automation/proposals:
+    get:
+      operationId: listAutomationProposals
+      tags: [admin, automation]
+      summary: 分页查询审核建议，支持 status 与 kind
+      security: [{adminSession: []}]
+      parameters:
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 1000000, default: 0}
+        - name: status
+          in: query
+          schema: {type: string}
+        - name: kind
+          in: query
+          schema: {type: string}
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationPage"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/automation/calls:
+    get:
+      operationId: listAutomationCalls
+      tags: [admin, automation]
+      summary: 分页查询模型调用与费用，不返回密钥和提示词
+      security: [{adminSession: []}]
+      parameters:
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 1000000, default: 0}
+        - name: status
+          in: query
+          schema: {type: string}
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationPage"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/proposals:
+    get:
+      operationId: listProposals
+      tags: [admin, automation]
+      summary: 兼容审核列表，最多 200 条
+      security: [{adminSession: []}]
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/proposals/{id}:
+    get:
+      operationId: getProposal
+      tags: [admin, automation]
+      summary: 读取候选内容、变更字段和证据
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/proposals/{id}/preview:
+    post:
+      operationId: previewProposal
+      tags: [admin, automation]
+      summary: 按审核决定生成预览，不保存、不发布、不记录访客事件
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AutomationDecision"}
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/proposals/{id}/decision:
+    post:
+      operationId: decideProposal
+      tags: [admin, automation]
+      summary: 按字段采纳并发布或拒绝；缺省字段均为 reject
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AutomationDecision"}
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AutomationObject"}
+        default:
+          $ref: "#/components/responses/Error"
+  /api/admin/source-capabilities:
+    get:
+      operationId: sourceCapabilities
+      tags: [admin, automation]
+      security: [{adminSession: []}]
+      responses:
+        "200":
+          description: 付费渠道的凭据与预算是否已配置，仅返回状态和环境变量名。
+        default: {$ref: "#/components/responses/Error"}
+  /api/admin/source-presets:
+    get:
+      operationId: sourcePresets
+      tags: [admin, automation]
+      security: [{adminSession: []}]
+      responses:
+        "200":
+          description: 固定版本的 AIHOT 示范清单、来源链接与已导入标记。
+        default: {$ref: "#/components/responses/Error"}
+  /api/admin/source-presets/import:
+    post:
+      operationId: importSourcePresets
+      tags: [admin, automation]
+      security: [{adminSession: []}]
+      parameters:
+        - {$ref: "#/components/parameters/csrf"}
+        - {$ref: "#/components/parameters/idempotencyKey"}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids: {type: array, minItems: 1, maxItems: 18, items: {type: string}}
+      responses:
+        "200":
+          description: created / existing 数量及新 source_ids。新信源均暂停，已有配置不覆盖。
+        default: {$ref: "#/components/responses/Error"}
+  /api/admin/sources/preview:
+    post:
+      operationId: previewSource
+      tags: [admin, automation]
+      security: [{adminSession: []}]
+      description: 使用未保存的配置试抓，不写入资料、采集任务或加工任务。付费渠道保留调用回执和预算记录。
+      parameters:
+        - {$ref: "#/components/parameters/csrf"}
+        - name: Idempotency-Key
+          in: header
+          description: 付费渠道必填；相同请求重放复用回执，不重新收费。
+          schema: {type: string, maxLength: 128}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind]
+              properties:
+                kind: {type: string, enum: [github, rss, json, web, x, wechat]}
+                name: {type: string}
+                repository: {type: string}
+                feed_url: {type: string}
+                config: {type: object, additionalProperties: true}
+      responses:
+        "200":
+          description: total、最多 20 条 items、warnings、elapsed_ms；persisted_items=0、processing_started=false。
+        "429":
+          description: 同时试抓的请求过多。
+        default: {$ref: "#/components/responses/Error"}
+  /mcp:
+    post:
+      operationId: mcpStreamableHTTP
+      tags: [mcp]
+      summary: MCP JSON-RPC 入口；工具列表按令牌只读、准备、执行权限裁剪
+      security: [{mcpBearer: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, additionalProperties: true}
+      responses:
+        "200": {description: MCP JSON-RPC 响应；工具错误在 result.isError 中表示}
+        "202": {description: 已接受通知}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+  /api/admin/mcp/tokens:
+    get:
+      operationId: mcpTokens
+      tags: [admin, mcp]
+      security: [{adminSession: []}]
+      responses:
+        "200": {description: 当前管理员最近 100 个令牌的名称、权限、过期和撤销状态；不返回摘要或令牌明文}
+        default: {$ref: "#/components/responses/Error"}
+    post:
+      operationId: mcpNewToken
+      tags: [admin, mcp]
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/csrf"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: {type: string, minLength: 1, maxLength: 80}
+                can_prepare: {type: boolean, default: false}
+                can_execute: {type: boolean, default: false, description: 必须同时启用 can_prepare}
+      responses:
+        "201": {description: 返回一次性令牌明文与 ID、30 天有效期；此接口不自动重试，也不保存明文幂等响应}
+        default: {$ref: "#/components/responses/Error"}
+  /api/admin/mcp/tokens/{id}:
+    delete:
+      operationId: mcpRevokeToken
+      tags: [admin, mcp]
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      responses:
+        "200": {description: 已撤销；后续 MCP 请求拒绝该令牌}
+        default: {$ref: "#/components/responses/Error"}
+  /api/admin/mcp/actions:
+    get:
+      operationId: mcpActions
+      tags: [admin, mcp]
+      security: [{adminSession: []}]
+      responses:
+        "200": {description: 当前管理员最近 100 条操作，含 arguments、preview、preview_digest、preview_url、status、result 和 expires_at}
+        default: {$ref: "#/components/responses/Error"}
+  /api/admin/mcp/actions/{id}:
+    get:
+      operationId: mcpGetAction
+      tags: [admin, mcp]
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+      responses:
+        "200": {description: 当前管理员拥有的指定操作及其不可变预览}
+        default: {$ref: "#/components/responses/Error"}
+  /api/admin/mcp/actions/{id}/confirm:
+    post:
+      operationId: mcpConfirm
+      tags: [admin, mcp]
+      security: [{adminSession: []}]
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+        - $ref: "#/components/parameters/csrf"
+        - $ref: "#/components/parameters/idempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [preview_digest]
+              properties:
+                preview_digest: {type: string, minLength: 64, maxLength: 64}
+                reject: {type: boolean, default: false}
+      responses:
+        "200": {description: 执行结果与操作状态、审计、幂等响应同事务提交；重复执行重放}
+        "409": {description: 版本或预览摘要冲突；全部回滚，操作仍待确认}
+        default: {$ref: "#/components/responses/Error"}
+components:
+  securitySchemes:
+    mcpBearer:
+      type: http
+      scheme: bearer
+    adminSession:
+      type: apiKey
+      in: cookie
+      name: nex_session
+  parameters:
+    kind:
+      name: kind
+      in: query
+      required: true
+      schema: { $ref: "#/components/schemas/Kind" }
+    resourceId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    csrf:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema: { type: string }
+    idempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+  responses:
+    Error:
+      description: 错误信封。field_errors 没有时为 []。
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    AutomationObject:
+      type: object
+      additionalProperties: true
+    AutomationPage:
+      type: object
+      required: [items, has_more, next_offset]
+      properties:
+        items: {type: array, maxItems: 50, items: {$ref: "#/components/schemas/AutomationObject"}}
+        has_more: {type: boolean}
+        next_offset: {type: integer, minimum: 0}
+    AutomationEmpty:
+      type: object
+      additionalProperties: false
+    AutomationVersionInput:
+      type: object
+      required: [edit_version]
+      properties:
+        edit_version: {type: integer, minimum: 1}
+    AutomationSourceInput:
+      type: object
+      required: [name, kind, participation_mode, trust_tier, enabled, interval_seconds]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 120}
+        kind: {type: string, enum: [github, rss, json, web, x, wechat, external]}
+        config: {type: object, description: 经类型校验的公开采集配置，不接受密钥, additionalProperties: true}
+        repository: {type: string, description: GitHub 信源必填 owner/name}
+        feed_url: {type: string, description: RSS 信源必填公开 HTTP(S) 地址}
+        participation_mode: {type: string, enum: [content, signal, internal]}
+        trust_tier: {type: string, enum: [official, verified, community, excluded]}
+        enabled: {type: boolean}
+        interval_seconds: {type: integer, minimum: 300, maximum: 604800}
+        allow_fulltext: {type: boolean, default: false}
+        edit_version: {type: integer, description: 更新信源时必填当前版本}
+    AutomationDecision:
+      type: object
+      required: [edit_version, fields]
+      properties:
+        edit_version: {type: integer, minimum: 0}
+        fields:
+          type: object
+          description: 未提供的字段一律拒绝；受保护字段须显式解锁。
+          additionalProperties: {type: string, enum: [accept, reject, rewrite]}
+        rewrites: {type: object, additionalProperties: true}
+        unlock: {type: array, items: {type: string}}
+        reason: {type: string}
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status: { type: string, enum: [live, ready, unavailable] }
+        version: { type: string }
+    Error:
+      type: object
+      required: [code, message, request_id, field_errors]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        request_id: { type: string }
+        field_errors:
+          type: array
+          items: { $ref: "#/components/schemas/FieldError" }
+    FieldError:
+      type: object
+      required: [field, code]
+      properties:
+        field: { type: string }
+        code: { type: string }
+    Kind:
+      type: string
+      enum: [tool, tutorial, repo]
+    Status:
+      type: string
+      enum: [draft, published, hidden, archived]
+    Sort:
+      type: string
+      enum: [recommended, heat, latest, relevance]
+    Pricing:
+      type: string
+      enum: [unknown, free, paid, freemium]
+    Level:
+      type: string
+      enum: [unknown, beginner, advanced]
+    EventType:
+      type: string
+      enum: [detail_view, outbound_click]
+    TagDimension:
+      type: string
+      enum: [category, capability, audience, difficulty]
+    Platform:
+      type: string
+      enum: [web, desktop, mobile, api, plugin]
+    Deployment:
+      type: string
+      enum: [hosted, self_host, local]
+    TagRef:
+      type: object
+      required: [id, name, slug, dimension]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        dimension: { $ref: "#/components/schemas/TagDimension" }
+    Card:
+      type: object
+      required: [subtitle, meta, href, cta]
+      properties:
+        subtitle: { type: string }
+        meta: { type: string }
+        href: { type: [string, "null"] }
+        cta: { type: string }
+    ResourceCard:
+      type: object
+      required: [id, kind, slug, title, summary, cover_urls, cover_fallback_count, tags, primary_category, quality_score, first_published_at, content_updated_at, card]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/Kind" }
+        slug: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        cover_urls:
+          type: array
+          items: { type: string }
+        cover_fallback_count: { type: integer }
+        tags:
+          type: array
+          items: { $ref: "#/components/schemas/TagRef" }
+        primary_category:
+          oneOf:
+            - $ref: "#/components/schemas/TagRef"
+            - type: "null"
+        quality_score: { type: integer, minimum: 0, maximum: 100 }
+        first_published_at: { type: [string, "null"], format: date-time }
+        content_updated_at: { type: string, format: date-time }
+        card: { $ref: "#/components/schemas/Card" }
+    ResourceDetail:
+      allOf:
+        - $ref: "#/components/schemas/ResourceCard"
+        - type: object
+          required: [aliases, body_markdown, recommendation_reason, details]
+          properties:
+            aliases:
+              type: array
+              items: { type: string }
+            body_markdown: { type: [string, "null"] }
+            recommendation_reason: { type: [string, "null"] }
+            details:
+              oneOf:
+                - $ref: "#/components/schemas/ToolDetails"
+                - $ref: "#/components/schemas/TutorialDetails"
+                - $ref: "#/components/schemas/RepoDetails"
+    ToolDetails:
+      type: object
+      required: [website_url, pricing, platforms, deployment]
+      properties:
+        website_url: { type: string }
+        pricing: { $ref: "#/components/schemas/Pricing" }
+        platforms:
+          type: array
+          items: { $ref: "#/components/schemas/Platform" }
+        deployment:
+          type: array
+          items: { $ref: "#/components/schemas/Deployment" }
+    TutorialDetails:
+      type: object
+      required: [level, minutes, steps]
+      properties:
+        level: { $ref: "#/components/schemas/Level" }
+        minutes: { type: integer, minimum: 0 }
+        steps:
+          type: array
+          items: { type: string }
+        author: { type: string }
+        source_url: { type: [string, "null"] }
+        notes: { type: [string, "null"] }
+    RepoDetails:
+      type: object
+      required: [github_repository_id, full_name, language, license, archived]
+      properties:
+        github_repository_id: { type: [string, "null"] }
+        full_name: { type: string }
+        language: { type: [string, "null"] }
+        license: { type: [string, "null"] }
+        archived: { type: boolean }
+        last_activity_at: { type: [string, "null"], format: date-time }
+    ResourcePage:
+      type: object
+      required: [items, next_cursor, has_more, total, effective_sort, ranking_version, ranking_computed_at, applied_query]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ResourceCard" }
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+        total: { type: [integer, "null"] }
+        effective_sort: { $ref: "#/components/schemas/Sort" }
+        ranking_version: { type: [string, "null"] }
+        ranking_computed_at: { type: [string, "null"], format: date-time }
+        applied_query:
+          type: object
+          required: [kind, q, tags, sort]
+          properties:
+            kind: { $ref: "#/components/schemas/Kind" }
+            q: { type: string }
+            tags:
+              type: array
+              items: { type: string }
+            sort: { $ref: "#/components/schemas/Sort" }
+    TagCount:
+      allOf:
+        - $ref: "#/components/schemas/TagRef"
+        - type: object
+          required: [count]
+          properties:
+            count: { type: integer, minimum: 0 }
+    FeaturedItem:
+      allOf:
+        - $ref: "#/components/schemas/ResourceCard"
+        - type: object
+          required: [position]
+          properties:
+            position: { type: integer, minimum: 1 }
+    FeaturedPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/FeaturedItem" }
+    EventBatch:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            required: [id, resource_id, type]
+            properties:
+              id: { type: string, format: uuid }
+              resource_id: { type: string, format: uuid }
+              type: { $ref: "#/components/schemas/EventType" }
+    EventResult:
+      type: object
+      required: [accepted, duplicate]
+      properties:
+        accepted: { type: integer, minimum: 0 }
+        duplicate: { type: integer, minimum: 0 }
+    AdminSession:
+      type: object
+      required: [admin_id, username, expires_at]
+      properties:
+        admin_id: { type: string, format: uuid }
+        username: { type: string }
+        expires_at: { type: string, format: date-time }

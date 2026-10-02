@@ -3,10 +3,12 @@ import Cover from './Cover.jsx'
 
 // A multi-cover gallery. Uses item.covers (array of image URLs) when provided,
 // otherwise generates `item.coverCount` (default 3) cover variants.
-export default function Gallery({ item, kind, big = false, href, onClick, autoplay = false, arrows = true, label }) {
+export default function Gallery({ item, kind, big = false, href, onClick, autoplay = false, arrows = true, label, activeIndex, onIndexChange }) {
   const covers = Array.isArray(item.covers) && item.covers.length ? item.covers : Array.from({ length: item.coverCount || 3 }, () => null)
   const n = covers.length
-  const [i, setI] = useState(0)
+  const [localIndex, setLocalIndex] = useState(0)
+  const i = activeIndex ?? localIndex
+  const setI = onIndexChange || setLocalIndex
   const [hover, setHover] = useState(false)
   const touch = useRef(null)
   const go = (k) => setI(((k % n) + n) % n)
@@ -15,7 +17,7 @@ export default function Gallery({ item, kind, big = false, href, onClick, autopl
     if (n < 2 || !(autoplay || hover)) return
     const t = setInterval(() => setI((x) => (x + 1) % n), autoplay ? 3200 : 1700)
     return () => clearInterval(t)
-  }, [autoplay, hover, n])
+  }, [autoplay, hover, n, setI])
 
   const View = href ? 'a' : onClick ? 'button' : 'div'
   const viewProps = href

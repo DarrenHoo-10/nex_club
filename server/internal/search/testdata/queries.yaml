@@ -1,0 +1,48 @@
+# Public search regression corpus. Every row is also tagged p3regress so the
+# assertion order stays inside this corpus. 配音 and 本地 are two code points.
+tag: p3regress
+corpus:
+  - slug: dub-exact
+    title: 配音
+    summary: 简介
+  - slug: dub-title
+    title: 专业配音工具
+    summary: 简介
+  - slug: dub-tag
+    title: 标签样本
+    summary: 简介
+    tag_name: 配音
+    tag_slug: voice-dub
+  - slug: dub-summary
+    title: 摘要样本
+    summary: 适合配音
+  - slug: dub-body
+    title: 正文样本
+    summary: 简介
+    body: 这里提到配音
+  - slug: local-exact
+    title: 本地
+    summary: 简介
+  - slug: local-title
+    title: 本地部署指南
+    summary: 简介
+  - slug: write-code
+    title: 写代码
+    summary: 简介
+  - slug: claude-tool
+    title: Claude
+    summary: 简介
+  - slug: llama-cpp
+    title: llama.cpp
+    summary: 本地推理引擎
+queries:
+  - q: 配音
+    slugs: [dub-exact, dub-title, dub-tag, dub-summary, dub-body]
+  - q: 本地
+    slugs: [local-exact, local-title, llama-cpp]
+  - q: 写代码
+    slugs: [write-code]
+  - q: Claude
+    slugs: [claude-tool]
+  - q: llama.cpp
+    slugs: [llama-cpp]

@@ -1,0 +1,13 @@
+{
+  "id": 42,
+  "name": "demo",
+  "full_name": "new/demo",
+  "description": "a demo",
+  "html_url": "https://github.com/new/demo",
+  "archived": true,
+  "stargazers_count": 9,
+  "forks_count": 1,
+  "open_issues_count": 0,
+  "pushed_at": "2024-01-02T03:04:05Z",
+  "default_branch": "main"
+}

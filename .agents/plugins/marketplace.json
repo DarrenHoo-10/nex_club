@@ -1,0 +1,10 @@
+{
+  "name": "nex-club-local",
+  "interface": { "displayName": "Nex Club" },
+  "plugins": [{
+    "name": "nex-club",
+    "source": { "source": "local", "path": "./plugins/nex-club" },
+    "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+    "category": "Productivity"
+  }]
+}

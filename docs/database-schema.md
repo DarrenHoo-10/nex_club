@@ -2,7 +2,7 @@
 
 本文件将 [Go 后端实施方案](backend-implementation-plan.md) 中的表清单细化为 PostgreSQL 字段、关系和约束，供数据库迁移与接口实现使用。状态为设计草案，尚未创建数据库或执行迁移。
 
-第一阶段包含 15 张应用表，第二阶段按采集接入需要再增加 13 张。River 自带的任务表由其官方迁移维护，不重复设计；schema migrations 表由所选迁移工具维护。文中使用 Postgres 最佳实践检查字段类型、关联索引和事务边界。
+第一阶段包含 15 张应用表，由 P0 基线创建；第一阶段验收后，P0 的第二阶段 schema 基线按外键顺序增加 13 张表，供 P6/P7/P8 并行实现。River 自带的任务表由其官方迁移维护，不重复设计；schema migrations 表由所选迁移工具维护。文中使用 Postgres 最佳实践检查字段类型、关联索引和事务边界。
 
 ## 通用约定
 
@@ -55,6 +55,7 @@ erDiagram
 | edit_version | bigint | 必填，1 | 大于 0，每次修改或状态变化递增，用于乐观锁 |
 | field_locks | text[] | 必填，空数组 | 人工保护的字段路径，Go 只允许白名单路径 |
 | is_demo | boolean | 必填，false | 生产公开查询排除演示内容 |
+| freshness_eligible | boolean | 必填，true | 为 false 时推荐新鲜度记 0。历史种子导入置 false，真实新发布保持 true。见技术方案 P1 |
 | first_published_at | timestamptz | 可空 | 第一次发布时赋值，之后不随编辑重置 |
 | created_at / updated_at | timestamptz | 必填，now() | 创建与最近一次管理修改时间 |
 | last_checked_at | timestamptz | 可空 | 最近成功检查来源时间，不参与最新排序 |
@@ -134,6 +135,8 @@ erDiagram
 | created_at | timestamptz | 必填，now() | 创建时间 |
 
 唯一约束：`(dimension, normalized_alias)`。部分唯一索引：`(tag_id) WHERE is_primary`，保证最多一个标准名。每个活跃标签至少有一个标准名行由创建和改名事务保证，不能只更新 tags.name。
+
+合并标签必须先将源标签的 is_primary 标准名降为普通别名，再迁移到目标，保留目标唯一的标准名。资源关系用插入目标并忽略主键冲突、再删除源关系的方式去重迁移，同时迁移 primary_category_id 并刷新搜索投影。历史修订不改写，解析时沿合并链找到 active 目标。合并与发布通过 taxonomy 独占/共享事务锁协调，均先取得 taxonomy 锁再锁资源。
 
 ### resource_tags
 
@@ -281,7 +284,7 @@ erDiagram
 
 ### idempotency_requests
 
-管理写入及后续外部推送共用的请求幂等记录。
+管理写入及后续外部推送共用存储，但使用不同事务协议。管理范围只有与业务共同提交的完成记录；推送范围包括可持久化为 processing 的批次父记录，以及逐条提交的完成子记录。
 
 | 字段 | PostgreSQL 类型 | 空值与默认值 | 含义与约束 |
 | --- | --- | --- | --- |
@@ -290,12 +293,19 @@ erDiagram
 | scope | text | 必填 | 接口与目标资源构成的规范化操作范围 |
 | idempotency_key | text | 必填 | 调用者提供的有长度上限的键 |
 | request_hash | text | 必填 | 规范化请求摘要 |
+| parent_id | uuid | 第二阶段增量，可空 | 推送条目所属批次；外键指向本表 id，管理记录和批次父记录为空 |
+| item_index | integer | 第二阶段增量，可空 | 原始数组序号，范围 0 至 49；仅推送子记录填写 |
+| request_meta | jsonb | 第二阶段增量，必填，空对象 | 父批次保存 item_count、有序 item_hashes、source_id 和 source_edit_version；不存完整正文 |
 | status | text | 必填，processing | processing、completed |
 | response_status | smallint | 可空 | 完成后的 HTTP 状态码 |
 | response_body | jsonb | 可空 | 不含凭据的可重放响应 |
 | created_at / expires_at | timestamptz | 必填 | 创建和保留期限，建议至少 24 小时 |
 
-唯一约束 `(principal_key,scope,idempotency_key)`；索引 expires_at。幂等记录与实际写入同一短事务完成，处理中未提交记录的并发请求等待锁或得到可重试响应。长任务只在事务中入队并保存 202 响应，不跨网络调用持有数据库事务。
+唯一约束 `(principal_key,scope,idempotency_key)`；索引 expires_at。管理协议以 READ COMMITTED 的短事务同时写业务和 completed 结果，并发请求等待提交后重放，回滚后可取得执行权。等锁超过上限回滚并返回 request_busy，不提交管理 processing 记录。返回 409 的回调是否提交，以总契约的操作结果表为准。
+
+第二阶段基线为本表追加上述三个列、唯一约束 `(parent_id,item_index)` 与 `(id,principal_key)`，并使用复合外键 `(parent_id,principal_key)` 指向 `(id,principal_key)`，确保子项和父批次属于同一主体。CHECK 要求 parent_id 与 item_index 同为空或同为非空，非空序号为 0 至 49，parent_id 不得等于 id。P6 校验父记录确为 ingest.batch.v1 范围，并在持有父行共享锁时验证 item_count、序号与条目摘要。
+
+推送父记录先以独立事务登记 request_hash 和不可变元信息；每条 AcceptTx 与其子结果同事务提交，最后按序汇总已完成子记录，将父记录置 completed。重试跳过已完成项，不依赖资料身份键重新写入旧正文。父批次处于 processing 时，其子项不能单独清理；仅父批次 completed 且整批保留期已过后，锁定父行、先删子项再删父项。管理执行器及清理命令必须按 scope 区分两套协议。
 
 ## 修订快照与类型字段
 
@@ -304,7 +314,7 @@ erDiagram
 | kind | details 字段 | 规则 |
 | --- | --- | --- |
 | tool | website_url、pricing、platforms、deployment | website_url 必须是允许的外部 URL；pricing 为 unknown/free/paid/freemium；平台与部署方式为枚举数组 |
-| tutorial | level、minutes、steps、author、source_url | steps 为有序步骤数组；正文与 steps 至少存在一项；minutes 为非负估计；未知难度允许 unknown |
+| tutorial | level、minutes、steps、author、source_url、notes | steps 为有序步骤数组；正文与 steps 至少存在一项；minutes 为非负估计；未知难度允许 unknown；notes 是可选的注意，不单独建列 |
 | repo | github_repository_id、full_name、language、license、archived、last_activity_at | 仓库 ID 用十进制字符串表达，避免前端数字精度丢失；full_name 可变化，稳定身份不变；Star 数进入指标快照 |
 
 收费、部署和语言等字段在首版有筛选需求时，从 details 建明确的表达式索引或提升为正式列，并修改接口契约。不会为所有 JSON 路径建立宽泛索引。primary_category_id 是推荐多样性重排的主分类；其维度与标签状态在发布事务验证。
@@ -375,6 +385,8 @@ run_key 唯一；索引 `(source_id,created_at DESC)`、`(status,created_at)`。
 
 唯一约束 identity_key；索引 owner_source_id、last_seen_at。identity_key 优先使用平台稳定 ID（带命名空间），其次使用规范化 URL；无法可靠关联时生成来源内身份并待审核。主来源不会被另一个渠道的转述自动替换。
 
+资料身份优先选择平台全局 ID，其次为可信永久原文 URL；即使条目另有非永久 GUID，存在可信 URL 时仍使用 url 身份，GUID 留在 source_item_key。只有缺少可信 URL 时才使用 rss:source:<id>:guid:<编码后的guid>。同名本地 GUID 不决定跨源身份；可信原文 URL 相同的资料可以跨源关联。
+
 ### raw_item_revisions
 
 不可变的原始资料版本，保留加工依据。
@@ -421,6 +433,8 @@ run_key 唯一；索引 `(source_id,created_at DESC)`、`(status,created_at)`。
 | id | uuid | 必填，Go 生成 | 主键 |
 | raw_revision_id | uuid | 必填 | 外键 raw_item_revisions.id |
 | stage | text | 必填 | extract、prefilter、structure、score、write、propose |
+| pipeline_key | text | 必填 | 资料修订、重跑编号和整轮计划摘要组成的轮次标识 |
+| pipeline_plan | jsonb | 必填 | 不可变整轮计划，含各阶段规则、schema、模型 profile 版本和输出上限 |
 | input_hash | text | 必填 | 完整阶段输入摘要，包含上游阶段输出的摘要 |
 | rule_version | text | 必填 | 提示词或确定性规则版本 |
 | rerun_no | integer | 必填，0 | 显式重新评估次数，非负 |
@@ -434,7 +448,9 @@ run_key 唯一；索引 `(source_id,created_at DESC)`、`(status,created_at)`。
 | started_at / finished_at | timestamptz | 可空 | 阶段起止 |
 | created_at / updated_at | timestamptz | 必填，now() | 建立与更新 |
 
-run_key 唯一；索引 `(raw_revision_id,stage)`、`(status,lease_until)`。调用返回后检查资料当前版本，过期结果标记 stale，不覆盖新资料。需要补抓原文而发现内容变化时，统一写入服务建立新资料修订，再安排新修订的下游阶段。
+run_key 唯一，另设唯一约束 `(raw_revision_id,pipeline_key,stage)`；索引 `(raw_revision_id,stage)`、`(status,lease_until)`。同轮配置必须一致，成功输出不可就地重写；input_hash 绑定准确上游运行 ID 及输出摘要。调用返回后锁定 raw_items 行并检查当前版本，过期结果标记 stale。并行阶段的成功标记、同轮汇合检查和后继入队在该行锁内同事务完成，避免双方看不到对方提交而漏任务。需要补抓原文而发现内容变化时，统一写入服务建立新资料修订，再安排新修订的下游阶段。
+
+重试只装载已持久化的运行行及 pipeline_plan，不用当前 Stage.RuleVersion() 重新计算 run_key。规则、提示词、schema、profile 和输出上限全量冻结；按固定版本解析实际实现，无法提供旧实现时 blocked/unsupported_rule_version，不能用新代码冒充旧版本。显式新轮次才增加 rerun_no 并写新运行。
 
 ### change_proposals
 
@@ -457,7 +473,7 @@ run_key 唯一；索引 `(raw_revision_id,stage)`、`(status,lease_until)`。调
 | applied_resource_id / applied_revision_id | uuid | 可空 | 两个独立列；复合外键指向实际产生的资源修订 |
 | created_at / updated_at | timestamptz | 必填，now() | 建立与更新 |
 
-唯一约束 `(processing_run_id,proposal_no)`；索引 `(status,created_at)`、resource_id、reviewed_by、applied_revision_id。resource_id 与 base_edit_version 同为空或同为非空。采纳时再次验证资料版本、字段锁和 edit_version；相同建议重复采纳不能生成重复修订。
+唯一约束 `(processing_run_id,proposal_no)`；索引 `(status,created_at)`、resource_id、reviewed_by、applied_revision_id。resource_id 与 base_edit_version 同为空或同为非空。采纳时再次验证资料版本、字段锁、edit_version 和共享的 HasUnpublishedDraft 判定；相同建议重复采纳不能生成重复修订。review_decisions 保存补全后的逐字段决定，命令未指定的项恒为 reject，自动模式还须验证白名单且拒绝 rewrite/Unlock。已有草稿的冲突原因也放入 review_decisions。无法识别 kind 时不创建本表记录，而在 processing_runs 保存 blocked/unknown_kind 诊断；proposed_kind 保持必填枚举。
 
 ### resource_evidence
 
@@ -487,6 +503,7 @@ run_key 唯一；索引 `(raw_revision_id,stage)`、`(status,lease_until)`。调
 | processing_run_id | uuid | 可空 | 外键 processing_runs.id，模型调用必须有 |
 | source_run_id | uuid | 可空 | 外键 source_runs.id，付费采集请求使用 |
 | provider_key / model | text | 前者必填，后者可空 | 服务商标识与模型，不含凭据 |
+| profile_version | text | 可空 | 模型调用必填，固定模型、价表、币种与请求策略的配置版本 |
 | request_key | text | 必填 | 逻辑请求的输入、模型、规则和重跑编号摘要 |
 | attempt_no | integer | 必填 | 大于 0 |
 | status | text | 必填，prepared | prepared、sent、succeeded、failed、unknown |
@@ -499,6 +516,8 @@ run_key 唯一；索引 `(raw_revision_id,stage)`、`(status,lease_until)`。调
 | created_at / sent_at / completed_at | timestamptz | 创建必填，其余可空 | 请求时间线 |
 
 唯一约束 `(request_key,attempt_no)`；部分唯一索引 `(request_key) WHERE status IN ('prepared','sent','unknown','succeeded')`。成功请求复用回执，未决请求阻止重复发送；失败后才允许下一次尝试。两个所属 run 外键必须恰好一个非空。分别索引 processing_run_id、source_run_id 和 `(provider_key,created_at)`。
+
+processing_run_id 非空时 profile_version 也必须非空。request_key 的输入摘要覆盖 profile_version、输出上限和返回 schema，P8 根据固定配置估算并记录 reserved_cost 与 currency。status=succeeded 只有在保存输出并将所有相关预算预占结算的同一事务里设置；不得存在新写入的成功回执仍保留 held 额度。prepared→sent 必须条件更新并确认提交后才能发送，unknown 恢复也使用相同结算事务。
 
 ### external_metric_snapshots
 
@@ -567,9 +586,13 @@ run_key 唯一；索引 `(raw_revision_id,stage)`、`(status,lease_until)`。调
 
 ## 关键事务与数据库约束
 
+事务唯一归最外层命令所有：管理 HTTP 由 P2 WriteExecutor 开启，CLI 和后台由外层命令开启；CreateDraftTx、SaveDraftTx、PublishTx、DecideTx、审计与 River InsertTx 均显式复用同一 pgx.Tx，不嵌套调用 Within。普通错误整体回滚；需要持久化的业务冲突作为结果提交，之后再返回 409。
+
 ### 保存草稿
 
 锁定 resources 行并比较调用方的 edit_version，插入完整 resource_revisions 快照，更新 draft_revision_id 和 edit_version，写审计与幂等结果后提交。此事务不修改 resource_publications 和 resource_tags，访客继续读取旧版本。
+
+未发布草稿统一使用 `HasUnpublishedDraft(draftID,publishedRevisionID)`：draftID 非空且（发布修订为空或两者不同）才为 true。管理 DTO、建议生成与锁内审核都调用相同判定；指针指向当前已发布修订不视为未发布草稿，正常发布仍清空指针。
 
 ### 正式发布
 
@@ -579,7 +602,7 @@ run_key 唯一；索引 `(raw_revision_id,stage)`、`(status,lease_until)`。调
 
 ### 应用采集修改
 
-验证 change_proposals 所绑定的资料修订、base_edit_version 与字段锁。人工按字段采纳后生成新资源修订，通过发布服务更新线上内容；新资源建议先建立资源身份。采集任务不直接对发布表做通用 UPDATE。
+先取得 taxonomy 共享锁，再锁关联资料、建议和资源。验证资料仍为当前修订、base_edit_version 与字段锁；HasUnpublishedDraft 为 true 则保存 conflict 决定并返回，不替换人工草稿。先将所有未指定字段补为 reject，只有显式且通过权限校验的 accept/rewrite 才应用。随后在同一事务调用 SaveDraftTx、使用返回的新版本调用 PublishTx、保存证据和审核结果；新资源使用 CreateDraftTx。直接写入发生版本冲突或技术错误时回滚；审核入口已识别的冲突可只提交决定与幂等响应，不提交半次发布。
 
 已有资源身份键冲突时，返回需要关联既有资源的结果，不自动创建第二份。来源文章与资源是不同实体，同一产品可以关联多个 raw_items，但只有一个已确认身份对应的资源。
 
@@ -611,7 +634,7 @@ ALTER TABLE resources
 
 ### 数据保留与删除
 
-原始行为建议保存 30 天，足以重算最近 7 天热度；日汇总可长期保存。排名快照至少保留到游标有效期结束后再清理。会话与幂等响应到期清理。原始资料、修订、加工回执和审计的保留期单独制定，有已发布资源证据或未结算预算依赖时不得删除。
+原始行为建议保存 30 天，足以重算最近 7 天热度；日汇总可长期保存。排名快照至少保留到游标有效期结束后再清理。会话及管理 completed 幂等响应到期清理；推送父子记录按整批 completed 后至少 24 小时的期限成组清理，processing 批次及其已完成子项必须保留并告警。原始资料、修订、加工回执和审计的保留期单独制定，有已发布资源证据或未结算预算依赖时不得删除。
 
 第二阶段加工记录与供应商回执不能级联删除。对已清理 River job 的诊断 ID 保留文本或整数快照，不建立阻止队列维护的外键。对外接口不返回原始资料、原始提示词、完整回执、预算或匿名会话标识。
 
@@ -619,13 +642,13 @@ ALTER TABLE resources
 
 | 批次 | 对应里程碑 | 本批建立的应用表 |
 | --- | --- | --- |
-| 基础认证与内容 | M0 至 M1 | admin_users、admin_sessions、audit_logs、idempotency_requests、resources、resource_revisions、tags、tag_aliases、resource_publications、resource_tags |
-| 展示运营与排名 | M2 至 M3 | featured_slots、interaction_events、resource_metrics_daily、ranking_runs、ranking_entries |
-| 原始资料入口 | M5 | sources、source_runs、ingest_credentials、raw_items、raw_item_revisions、raw_item_discoveries |
-| 外部客观指标 | M6 | external_metric_snapshots |
-| 加工审核与预算 | M7 | processing_runs、change_proposals、resource_evidence、provider_calls、provider_budget_windows、provider_budget_reservations |
+| 第一阶段基线 内容与认证 | M0 建表，M1 至 M3 实现 | admin_users、admin_sessions、audit_logs、idempotency_requests、resources、resource_revisions、tags、tag_aliases、resource_publications、resource_tags |
+| 第一阶段基线 展示与排名 | 同一 M0 基线，M2 至 M3 实现 | featured_slots、interaction_events、resource_metrics_daily、ranking_runs、ranking_entries |
+| 第二阶段基线第一步 | M4 后、P6/P7/P8 实现合并前 | sources、source_runs、ingest_credentials、raw_items、raw_item_revisions、raw_item_discoveries；ALTER idempotency_requests 增加推送父子记录字段及约束 |
+| 第二阶段基线第二步 | 同一基线，目标资料表已存在 | processing_runs、change_proposals、resource_evidence |
+| 第二阶段基线第三步 | 同一基线，source_runs 和 processing_runs 已存在 | provider_calls、provider_budget_windows、provider_budget_reservations、external_metric_snapshots |
 
-按批次实施，每次迁移同时交付唯一约束、外键、必需索引和测试。River 自带表按锁定版本在 M0 运行官方迁移。schema 设计不代表上线前必须一次性建立全部 28 张表。
+由 P0 按两个阶段分别合并基线，每次同时交付唯一约束、外键、索引和空库迁移测试。第二阶段三步属于同一基线 PR，完成后各业务包才独立合并；不能先提交 provider_calls 再等待其他包补外键目标。River 自带表按锁定版本在 M0 运行官方迁移，首阶段不预建第二阶段表。
 
 ## 迁移验收用例
 
@@ -640,5 +663,13 @@ ALTER TABLE resources
 - 并发幂等写入只产生一次业务结果；键相同但请求不同返回 409。
 - 同一逻辑外部请求存在成功或 unknown 回执时，不允许第二次未决请求。
 - 同一付费调用重复结算，预算窗口只扣一次；unknown 调用额度保持预占。
+- 成功回执与预算结算在任何故障注入点都共同提交或共同回滚；成功回执重放不会漏结算。
+- 同一轮 structure 和 score 并发完成只安排一个 write，不同轮次不能汇合。
+- 有人工草稿时采纳被阻止；后续写证据失败时先前发布也回滚。
+- 两个 RSS 信源同名本地 GUID 不冲突；unknown_kind 只写加工诊断，不违反建议类型约束。
+- 有相同可信原文 URL 但不同本地 GUID 的来源只形成一份资料，GUID 保留在各来源发现记录。
+- 管理同键请求等待已提交结果后重放；推送按已登记批次和子结果恢复，旧批次不重复执行完成项。
+- 幂等父子关系的主体、序号唯一性成立；清理不能删除未完成批次的已完成子项。
+- 重试升级前的阶段继续使用原计划与旧实现，版本不可用时阻塞而不新插冲突阶段行。
 
 实施时将这些约束写成真实 PostgreSQL 集成测试；当前交付为字段级设计文档，尚未验证数据库迁移执行。
