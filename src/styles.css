@@ -186,7 +186,8 @@ button.pill:hover { color: var(--text); background: var(--glass-hi); }
   position: relative; container-type: inline-size; aspect-ratio: 16 / 10; overflow: hidden;
   background: linear-gradient(var(--ang, 135deg), var(--a), var(--b));
 }
-.cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Keep gallery slots stable while showing the complete uploaded artwork. */
+.cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .orb { position: absolute; border-radius: 50%; filter: blur(2px); }
 .o1 { width: 60%; aspect-ratio: 1; right: calc(-14% + var(--shift, 0%)); top: -30%; background: radial-gradient(circle at 35% 35%, var(--c), transparent 68%); opacity: .9; }
 .o2 { width: 46%; aspect-ratio: 1; left: calc(-10% + var(--shift, 0%)); bottom: -26%; background: radial-gradient(circle, rgba(255, 255, 255, .55), transparent 68%); }
@@ -292,7 +293,7 @@ button.pill:hover { color: var(--text); background: var(--glass-hi); }
 .gdot.on { width: 18px; background: #fff; }
 
 .reader-cover { margin: 0 0 24px; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, .2); }
-.reader-cover img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.reader-cover img { display: block; width: 100%; height: auto; max-height: min(50dvh, 480px); object-fit: contain; }
 
 .reader-body { margin: 0 0 28px; font-size: 16px; line-height: 1.8; overflow-wrap: anywhere; }
 .reader-body > :first-child { margin-top: 0; }
@@ -326,7 +327,7 @@ button.pill:hover { color: var(--text); background: var(--glass-hi); }
 .reader-body tr:last-child td { border-bottom: none; }
 
 .resource-modal-cover { margin: 0 0 24px; border-radius: 20px; overflow: hidden; box-shadow: 0 6px 30px rgba(0, 0, 0, .25); border: 1px solid var(--glass-border); }
-.resource-modal-cover img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.resource-modal-cover img { display: block; width: 100%; height: auto; max-height: min(50dvh, 480px); object-fit: contain; }
 .author-pill { color: var(--accent); font-weight: 500; }
 .resource-modal-badge { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--glass-border); font-size: 13px; color: var(--muted); }
 .resource-modal-badge .source-author { display: flex; align-items: center; gap: 6px; font-weight: 500; color: var(--text); }
