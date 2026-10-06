@@ -34,6 +34,9 @@ export default function ResourceModal({ item, onClose }) {
     eyebrow={`${KIND_LABELS[resource?.kind || item.kind]} · 详情`}
     onClose={onClose}
     busy={!resource && !error}
+    reading={(resource?.kind || item.kind) === 'tutorial'}
+    readingKey={`tutorial:${item.slug}`}
+    contentVersion={resource}
   >
     {!resource && !error && <p className="empty" role="status">正在加载介绍…</p>}
     {error && <div className="alert" role="alert">

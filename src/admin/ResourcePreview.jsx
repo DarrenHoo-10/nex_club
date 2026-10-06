@@ -13,6 +13,8 @@ export default function ResourcePreview({ resource, banner, onClose }) {
     eyebrow="发布前预览"
     closeLabel="返回编辑"
     onClose={onClose}
+    reading={resource.kind === 'tutorial' && view === 'detail'}
+    contentVersion={resource}
     toolbar={<div className="preview-toolbar">
       <p className="preview-banner" role="status">{banner}</p>
       <div className="sort-control pill-glass" role="group" aria-label="预览方式">

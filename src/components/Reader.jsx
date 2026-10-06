@@ -1,12 +1,12 @@
 import MarkdownBody from './MarkdownBody.jsx'
 
-export default function Reader({ item, showTitle = true }) {
+export default function Reader({ item, showTitle = true, showCover = true }) {
   const steps = Array.isArray(item.steps) ? item.steps : []
   const stepLabel = steps.length ? ` · ${steps.length} 步` : ''
   const authorLabel = item.author ? ` · ${item.author}` : ''
   return (
     <article className="reader glass strong" aria-label={item.title}>
-      {item.cover ? (
+      {item.cover && showCover ? (
         <div className="reader-cover">
           <img src={item.cover} alt="" loading="lazy" />
         </div>

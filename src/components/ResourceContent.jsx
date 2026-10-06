@@ -35,7 +35,7 @@ export default function ResourceContent({ resource, onOutbound }) {
       <h3>推荐理由</h3><p>{resource.recommendation_reason}</p>
     </aside>}
     {resource.kind === 'tutorial'
-      ? <Reader item={toReaderModel(resource)} showTitle={false} />
+      ? <Reader item={toReaderModel(resource)} showTitle={false} showCover={false} />
       : resource.body_markdown && <MarkdownBody source={resource.body_markdown} />}
   </>
 }
