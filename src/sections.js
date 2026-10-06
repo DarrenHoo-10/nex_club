@@ -1,17 +1,17 @@
 export const SECTIONS = [
   {
+    key: 'tutorials',
+    kind: 'tutorial',
+    label: 'AI教程',
+    title: '照着做就能成的 AI 教程',
+    blurb: '一步步的 AI 教程与实战经验，从入门到进阶。',
+  },
+  {
     key: 'tools',
     kind: 'tool',
     label: 'AI工具网站',
     title: '发现真正好用的 AI 工具',
     blurb: '少而精的 AI 工具站点，每一个都值得收藏。',
-  },
-  {
-    key: 'tutorials',
-    kind: 'tutorial',
-    label: 'AI焚决集合',
-    title: '照着做就能成的 AI 秘籍',
-    blurb: '一步步的 AI 教程与实战心法，从入门到进阶。',
   },
   {
     key: 'repos',
@@ -21,6 +21,8 @@ export const SECTIONS = [
     blurb: '开源社区里真正有价值的 AI 项目。',
   },
 ]
+
+export const DEFAULT_SECTION_KEY = SECTIONS[0].key
 
 export const SORT_OPTIONS = [
   { key: 'recommended', label: '推荐', title: '按编辑推荐顺序' },

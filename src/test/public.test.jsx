@@ -50,6 +50,27 @@ function clientWith(listResources) {
 }
 
 describe('public sections', () => {
+  it('opens tutorials by default with tutorials first in the navigation', async () => {
+    const router = renderAt('/')
+    await screen.findByRole('heading', { level: 1, name: '照着做就能成的 AI 教程' })
+    expect(router.state.location.pathname).toBe('/tutorials')
+    const links = within(screen.getByRole('navigation', { name: '板块' })).getAllByRole('link')
+    expect(links.map(link => link.textContent)).toEqual(['AI教程', 'AI工具网站', 'AI GitHub 项目'])
+    expect(links.map(link => link.getAttribute('href'))).toEqual(['/tutorials', '/tools', '/repos'])
+    expect(links[0]).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('returns to tutorials from the logo without changing section URLs', async () => {
+    const user = userEvent.setup()
+    const router = renderAt('/repos?sort=latest')
+    await screen.findByRole('heading', { level: 1, name: '值得 Star 的 AI 开源项目' })
+    await user.click(screen.getByRole('link', { name: 'Nex Club' }))
+    await screen.findByRole('heading', { level: 1, name: '照着做就能成的 AI 教程' })
+    expect(router.state.location.pathname).toBe('/tutorials')
+    await act(() => router.navigate(-1))
+    expect(router.state.location.pathname + router.state.location.search).toBe('/repos?sort=latest')
+  })
+
   it('renders the tools fixture', async () => {
     renderAt('/tools')
     expect(await screen.findByRole('heading', { level: 1, name: '发现真正好用的 AI 工具' })).toBeInTheDocument()
@@ -58,7 +79,7 @@ describe('public sections', () => {
 
   it('renders the tutorials fixture', async () => {
     renderAt('/tutorials')
-    expect(await screen.findByRole('heading', { level: 1, name: '照着做就能成的 AI 秘籍' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: '照着做就能成的 AI 教程' })).toBeInTheDocument()
     expect(screen.getAllByRole('heading', { level: 3, name: '如何订阅 Claude 会员' }).length).toBeGreaterThan(0)
   })
 
@@ -95,10 +116,14 @@ describe('public sections', () => {
     expect(screen.getByRole('button', { name: '推荐' })).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('redirects #tools to /tools once', async () => {
-    const router = renderAt('/#tools')
-    expect(await screen.findByRole('heading', { level: 1, name: '发现真正好用的 AI 工具' })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/tools')
+  it.each([
+    ['tools', '发现真正好用的 AI 工具'],
+    ['tutorials', '照着做就能成的 AI 教程'],
+    ['repos', '值得 Star 的 AI 开源项目'],
+  ])('preserves the legacy #%s entry', async (key, title) => {
+    const router = renderAt(`/#${key}`)
+    expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(`/${key}`)
     expect(router.state.location.hash).toBe('')
   })
 
@@ -122,7 +147,7 @@ describe('public sections', () => {
     const user = userEvent.setup()
     const router = renderAt('/tools?q=claude&tag=chat&sort=heat')
     await screen.findByRole('heading', { level: 1, name: '发现真正好用的 AI 工具' })
-    await user.click(screen.getByRole('link', { name: 'AI焚决集合' }))
+    await user.click(screen.getByRole('link', { name: 'AI教程' }))
     expect(router.state.location.pathname).toBe('/tutorials')
     expect(router.state.location.search).toBe('?sort=heat')
   })
