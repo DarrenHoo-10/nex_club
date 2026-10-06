@@ -518,7 +518,7 @@ func TestSeedIdempotent(t *testing.T) {
 		if after2Resources != after1Resources || after2Featured != after1Featured {
 			return fmt.Errorf("second import changed resources %d→%d featured %d→%d", after1Resources, after2Resources, after1Featured, after2Featured)
 		}
-		if beforeResources == 0 && (after1Resources != 25 || after1Featured-beforeFeatured != 12) {
+		if beforeResources == 0 && (after1Resources != 26 || after1Featured-beforeFeatured != 13) {
 			return fmt.Errorf("seed counts resources %d featured +%d", after1Resources, after1Featured-beforeFeatured)
 		}
 		if _, ok, err := svc.FindByIdentityTx(ctx, tx, catalog.KindTool, "url:https://claude.ai"); err != nil || !ok {

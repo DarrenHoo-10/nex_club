@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
 
 	"github.com/darrenhoo/nex_club/server/internal/catalog"
@@ -40,7 +41,14 @@ func TestSeedMapping(t *testing.T) {
 	if featured != 13 {
 		t.Fatalf("featured %d", featured)
 	}
-	if len(chatcut.CoverURLs) != 1 || chatcut.CoverURLs[0] != "/covers/chatcut-1.jpg" || chatcut.Body == "" {
+	if !slices.Equal(chatcut.CoverURLs, []string{
+		"/covers/chatcut-1.jpg",
+		"/covers/chatcut-fig1.jpg",
+		"/covers/chatcut-fig2.jpg",
+		"/covers/chatcut-fig3.jpg",
+		"/covers/chatcut-fig4.jpg",
+		"/covers/chatcut-fig5.jpg",
+	}) || chatcut.Body == "" {
 		t.Fatalf("chatcut seed not parsed correctly: %+v", chatcut)
 	}
 	if claude.Identity == nil || *claude.Identity != "url:https://claude.ai" {
