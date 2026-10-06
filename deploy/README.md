@@ -1,6 +1,8 @@
 # 首尔生产部署
 
-入口：`https://club.nexorai.com.cn`，后台 `/admin`，MCP `/mcp`。
+入口：`https://club.nexorai.com.cn`，后台 `/admin`。Club 公网 MCP `/mcp` 已停用（410）；MCP 客户端统一通过 Nex MCP 网关认证。
+
+网关内部连接为可选 Linux Unix socket，默认关闭，不新增网络端口，也不再使用 Club MCP 令牌。部署 overlay、专用服务身份、socket 权限与网关 stdio 配置见 [MCP 网关接入说明](../plugins/nex-club/gateway/README.md)。这是需要单独安排的破坏性迁移：只更新 API 会关闭旧直连，不会自动让网关可用。
 
 Web 静态资源由 Go API 同源提供。API、Worker、PostgreSQL 使用独立的 Compose 项目 `nex-club`，API 仅映射 `127.0.0.1:8089`，数据库不开放宿主端口。宿主 Nginx 使用该域名的独立配置与 Let's Encrypt 证书，证书由现有 Certbot 任务续期并平滑加载。
 
@@ -52,6 +54,6 @@ Nginx 配置先 `nginx -t`，通过后只使用 reload；不 restart，不修改
 
 ## 验证
 
-首次上线已通过公网 HTTPS 验证：三个类型及排序空列表、后台登录与 Secure Cookie、18 个暂停信源、MCP 初始化/读取/鉴权/撤销。验收用令牌已撤销，不留活动测试连接。
+历史首次上线曾验证公网 MCP 初始化/读取/鉴权/撤销（验收令牌已撤销）。该记录不适用于新的网关内部通道；新版本必须另外验证公网 `/mcp` 返回 410、网关认证、socket 文件权限与只读工具隔离，以及原有页面、后台登录与 Secure Cookie。
 
 Cloudflare 会拒绝默认 Python urllib 的客户端签名。部署检查使用明确的应用 User-Agent `NexClub-DeploymentCheck/1.0`；站点和标准 curl 客户端正常。未降低 Cloudflare 或服务器的安全设置。

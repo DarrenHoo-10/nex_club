@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"encoding/base64"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -92,10 +93,37 @@ func TestPreviousCursorKeyCannotReuseCurrentID(t *testing.T) {
 	}
 }
 
+func TestMCPConfigRequiresSocketAndActorTogether(t *testing.T) {
+	setValid(t)
+	cfg, err := Load()
+	if err != nil || cfg.MCPSocket != "" {
+		t.Fatal("MCP must be disabled by default", err)
+	}
+	path := filepath.Join(t.TempDir(), "mcp.sock")
+	for _, tc := range []struct{ socket, actor string }{
+		{path, ""}, {"", "00000000-0000-4000-8000-000000000001"},
+		{"relative.sock", "00000000-0000-4000-8000-000000000001"},
+		{path, "invalid"}, {path, "00000000-0000-0000-0000-000000000000"},
+	} {
+		t.Setenv("NEX_MCP_SOCKET", tc.socket)
+		t.Setenv("NEX_MCP_ADMIN_ID", tc.actor)
+		if _, err := Load(); err == nil {
+			t.Fatal("accepted incomplete MCP configuration", tc)
+		}
+	}
+	t.Setenv("NEX_MCP_SOCKET", path)
+	t.Setenv("NEX_MCP_ADMIN_ID", "00000000-0000-4000-8000-000000000001")
+	if cfg, err := Load(); err != nil || cfg.MCPSocket != path {
+		t.Fatal("valid MCP configuration rejected", err)
+	}
+}
+
 func setValid(t *testing.T) {
 	t.Helper()
 	t.Setenv("NEX_DATABASE_URL", "postgres://nex:nex@127.0.0.1:54329/nex_club?sslmode=disable")
 	t.Setenv("NEX_HTTP_ADDR", "")
+	t.Setenv("NEX_MCP_SOCKET", "")
+	t.Setenv("NEX_MCP_ADMIN_ID", "")
 	t.Setenv("NEX_PUBLIC_BASE_URL", "http://localhost:5173/")
 	t.Setenv("NEX_SESSION_SECRET", strings.Repeat("s", 32))
 	t.Setenv("NEX_CURSOR_SECRET", base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{1}, 32)))

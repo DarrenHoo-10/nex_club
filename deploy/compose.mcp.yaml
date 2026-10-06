@@ -1,0 +1,14 @@
+# Optional same-host gateway transport. Provision the protected directory first;
+# never publish this socket through HTTP or grant the gateway Docker access.
+services:
+  api:
+    environment:
+      NEX_MCP_SOCKET: /run/nex-club-mcp/mcp.sock
+      NEX_MCP_ADMIN_ID: ${NEX_MCP_ADMIN_ID:?Set a dedicated active administrator UUID}
+    group_add: ["21001"]
+    volumes:
+      - type: bind
+        source: /run/nex-club-mcp
+        target: /run/nex-club-mcp
+        bind:
+          create_host_path: false

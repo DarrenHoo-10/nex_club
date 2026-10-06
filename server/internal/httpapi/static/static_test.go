@@ -66,6 +66,19 @@ func TestHealthStaysOnTheAPI(t *testing.T) {
 	}
 }
 
+func TestMCPPathsNeverFallBackToSPA(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("home"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	closed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusGone) })
+	for _, path := range []string{"/mcp", "/mcp/", "/mcp/internal"} {
+		if rec := get(t, Wrap(closed, dir), path); rec.Code != http.StatusGone {
+			t.Fatalf("MCP path served SPA: %s %d", path, rec.Code)
+		}
+	}
+}
+
 func get(t *testing.T, h http.Handler, path string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, path, nil)

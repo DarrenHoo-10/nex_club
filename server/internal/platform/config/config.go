@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type Config struct {
@@ -21,6 +24,8 @@ type Config struct {
 	ModelEnabled      bool
 	ModelFixture      bool
 	StaticDir         string
+	MCPSocket         string
+	MCPAdminID        uuid.UUID
 }
 
 func Load() (Config, error) {
@@ -78,6 +83,17 @@ func Load() (Config, error) {
 	}
 	cfg.CursorPrevious = prev
 	cfg.StaticDir = strings.TrimSpace(os.Getenv("NEX_STATIC_DIR"))
+	cfg.MCPSocket = strings.TrimSpace(os.Getenv("NEX_MCP_SOCKET"))
+	actor := strings.TrimSpace(os.Getenv("NEX_MCP_ADMIN_ID"))
+	if cfg.MCPSocket != "" || actor != "" {
+		if !filepath.IsAbs(cfg.MCPSocket) {
+			return Config{}, fmt.Errorf("NEX_MCP_SOCKET must be an absolute Unix socket path")
+		}
+		cfg.MCPAdminID, err = uuid.Parse(actor)
+		if err != nil || cfg.MCPAdminID == uuid.Nil {
+			return Config{}, fmt.Errorf("NEX_MCP_ADMIN_ID must be a nonzero administrator UUID when MCP is enabled")
+		}
+	}
 	return cfg, nil
 }
 
