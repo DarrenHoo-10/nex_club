@@ -21,7 +21,7 @@ npm run build   # 产物在 dist/
 正常运行时页面读取 Go API。`src/data/` 下的 JSON 仅用于开发种子导入：
 
 - `tools.json`：AI 工具网站
-- `tutorials.json`：AI 焚决（教程，含步骤与提示）
+- `tutorials.json`：AI 教程（含步骤与提示）
 - `repos.json`：GitHub 项目
 
 开发种子使用 `nexadm import --file src/data` 导入；正式内容通过管理后台或采集审核发布。
@@ -55,6 +55,8 @@ go build -o bin/worker ./cmd/worker
 
 ## 列表排序
 
+导航依次为「AI教程 / AI工具网站 / AI GitHub 项目」，首页和 Logo 默认进入 `/tutorials`。既有 `/tools`、`/tutorials`、`/repos` 与对应旧 hash 入口保持可用。
+
 三个板块支持「推荐 / 热度 / 最新」，可与搜索和标签筛选组合使用。真实接口按排名快照排序；关键词搜索默认按相关度。切换板块保留排序偏好。
 
 - `heat`：非负热度分数，按从高到低排序；未填写时按 0 处理。
@@ -76,7 +78,7 @@ go build -o bin/worker ./cmd/worker
 
 ## 内容管理插件
 
-独立插件仓库：[nex-club-plugin](https://github.com/DarrenHoo-10/nex-club-plugin)。本仓库保留开发副本 [`plugins/nex-club`](plugins/nex-club/README.md)，将 MCP 与 `manage-content` Skill 打包，直接在 Codex 对话中研究素材、整理草稿、预览及执行发布/采集工作流。后台入口为 `/admin/automation/mcp`，用于令牌管理与操作检查，不再提供独立 AI 聊天页。MCP 地址为 `/mcp`；权限、确认和幂等契约见 [设计说明](docs/designs/12-mcp-plugin.md)。
+独立插件仓库：[nex-club-plugin](https://github.com/DarrenHoo-10/nex-club-plugin)。本仓库保留开发副本 [`plugins/nex-club`](plugins/nex-club/README.md)，将 MCP 与 `manage-content`、[`import-tutorial`](plugins/nex-club/skills/import-tutorial/SKILL.md) Skill 打包，直接在 Codex 对话中研究素材、保留原文格式录入教程草稿、预览及执行发布/采集工作流。后台入口为 `/admin/automation/mcp`，用于令牌管理与操作检查，不再提供独立 AI 聊天页。MCP 地址为 `/mcp`；权限、确认和幂等契约见 [设计说明](docs/designs/12-mcp-plugin.md)。
 
 ## 首尔生产环境
 

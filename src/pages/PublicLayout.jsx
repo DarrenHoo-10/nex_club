@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
-import { SECTIONS, sectionPath } from '../sections.js'
+import { DEFAULT_SECTION_KEY, SECTIONS, sectionPath } from '../sections.js'
 
 export default function PublicLayout() {
   const location = useLocation()
@@ -25,7 +25,7 @@ export default function PublicLayout() {
     <div className="page">
       <div className="bg" aria-hidden><i className="b1" /><i className="b2" /><i className="b3" /><i className="b4" /></div>
       <header className="nav glass">
-        <Link className="logo" to="/tools">
+        <Link className="logo" to={`/${DEFAULT_SECTION_KEY}`}>
           <Logo />
           <span className="logo-text">Nex <b>Club</b></span>
         </Link>

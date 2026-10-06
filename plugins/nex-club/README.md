@@ -1,6 +1,6 @@
 # Nex Club 内容管理插件
 
-一个 Codex 插件，包含 Nex Club MCP 连接和 `manage-content` Skill。讨论与写作发生在现有 AI 对话中；Nex Club 服务端负责资源与采集命令，不运行一套独立聊天模型。
+一个 Codex 插件，包含 Nex Club MCP 连接、`manage-content` 内容管理 Skill 和 [`import-tutorial`](skills/import-tutorial/SKILL.md) 教程录入 Skill。讨论与写作发生在现有 AI 对话中；Nex Club 服务端负责资源与采集命令，不运行一套独立聊天模型。
 
 ## 连接本地项目
 
@@ -21,11 +21,15 @@ codex plugin add nex-club@nex-club-local
 ## 使用
 
 - “这份素材值得收录吗？先和我讨论文章角度。”
+- “用 import-tutorial 把这个链接录入 AI教程，保留全文、加粗、代码和图片，先保存草稿。”
+- “把这份文档整理成 AI教程，保留作者与来源，先给我预览。”
 - “把我们讨论的内容整理成教程草稿，展示预览。”
 - “这份预览确认无误，发布这一版。”
 - “看看哪些加工任务失败了，告诉我原因。”
 
 读工具默认允许；准备、网页读取和执行工具默认由客户端询问授权。执行还需要服务端令牌权限与匹配的预览摘要。只允许准备的连接可以在后台完成最终确认。
+
+`import-tutorial` 会查重并核对原文格式；`read_url` 的纯文本摘录不足以证明完整排版。文档解析与图片上传不属于本插件的 MCP 能力，缺失时会明确说明依赖。录入默认止于草稿，发布需要用户对具体版本的明确授权。
 
 本版使用个人 Bearer 令牌和 Streamable HTTP，适用于本地 Codex / 支持此鉴权方式的客户端。没有 OAuth 登录；不是已经提交到公共插件商店的版本。令牌 30 天过期，随时可在后台撤销。
 
