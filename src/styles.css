@@ -308,6 +308,7 @@ button.pill:hover { color: var(--text); background: var(--glass-hi); }
 .reader-body pre { margin: 1.2em 0; padding: 16px 20px; border-radius: 14px; background: rgba(10, 15, 30, .6); border: 1px solid var(--glass-border); overflow-x: auto; font-family: var(--mono); font-size: 13.5px; line-height: 1.6; }
 .reader-body code { font-family: var(--mono); font-size: .9em; padding: 2px 6px; border-radius: 6px; background: var(--pill-bg); border: 1px solid var(--glass-border); }
 .reader-body pre code { padding: 0; border: none; background: none; }
+.reader-body img { display: block; max-width: 100%; height: auto; margin: 1.6em auto; border-radius: 14px; box-shadow: 0 4px 24px rgba(0, 0, 0, .25); border: 1px solid var(--glass-border); }
 .reader-plain { white-space: pre-wrap; margin: 0; }
 .reader-fallback { margin: 0 0 28px; }
 .detail { display: grid; gap: 18px; padding-top: 28px; }

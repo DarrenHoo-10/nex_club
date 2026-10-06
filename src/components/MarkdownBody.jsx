@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { safeHttpUrl } from '../api/view.js'
 
 const NOTICE = '正文格式无法完整解析，以下为原文。'
@@ -9,6 +10,7 @@ export default function MarkdownBody({ source }) {
     <MarkdownErrorBoundary source={source}>
       <div className="reader-body">
         <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
           urlTransform={safeHttpUrl}
           components={{
             a({ href, children }) {
@@ -18,8 +20,8 @@ export default function MarkdownBody({ source }) {
             },
             img({ src, alt }) {
               const safe = safeHttpUrl(src)
-              if (!safe) return null
-              return <img src={safe} alt={alt || ''} />
+              if (!safe && !src?.startsWith('/')) return null
+              return <img src={safe || src} alt={alt || ''} loading="lazy" />
             },
           }}
         >
