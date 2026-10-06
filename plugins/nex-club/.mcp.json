@@ -2,34 +2,11 @@
   "mcpServers": {
     "nex_club": {
       "type": "http",
-      "url": "https://club.nexorai.com.cn/mcp",
-      "bearer_token_env_var": "NEX_CLUB_MCP_TOKEN",
+      "url": "https://mcp.nexorai.com.cn/mcp",
+      "bearer_token_env_var": "NEX_MCP_TOKEN",
       "startup_timeout_sec": 20,
       "tool_timeout_sec": 60,
-      "default_tools_approval_mode": "prompt",
-      "tools": {
-        "list_resources": {
-          "approval_mode": "approve"
-        },
-        "get_resource": {
-          "approval_mode": "approve"
-        },
-        "list_tags": {
-          "approval_mode": "approve"
-        },
-        "read_material": {
-          "approval_mode": "approve"
-        },
-        "automation_status": {
-          "approval_mode": "approve"
-        },
-        "get_action": {
-          "approval_mode": "approve"
-        },
-        "execute_action": {
-          "approval_mode": "prompt"
-        }
-      }
+      "default_tools_approval_mode": "prompt"
     }
   }
 }

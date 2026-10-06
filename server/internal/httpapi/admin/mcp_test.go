@@ -2,16 +2,12 @@ package admin
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
-	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/darrenhoo/nex_club/server/db"
 	"github.com/darrenhoo/nex_club/server/internal/adminauth"
@@ -157,68 +153,64 @@ func TestAssistantConfirmationIsAtomicAndOwned(t *testing.T) {
 	}
 }
 
-type assistantBearerTransport struct{ token string }
-
-func (r assistantBearerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req = req.Clone(req.Context())
-	req.Header.Set("Authorization", "Bearer "+r.token)
-	return http.DefaultTransport.RoundTrip(req)
-}
-func TestMCPHTTPAuthScopeRevocationAndOrigin(t *testing.T) {
+func TestMCPGatewayIdentityScopeAndDisable(t *testing.T) {
 	st, ctx, actor := assistantTestStore(t)
-	token := "nex_mcp_" + strings.Repeat("a", 64)
-	hash := sha256.Sum256([]byte(token))
-	id := uuid.New()
-	_, err := st.Pool.Exec(ctx, `INSERT INTO mcp_tokens(id,admin_id,name,token_hash,expires_at) VALUES($1,$2,'test',$3,now()+interval '1 hour')`, id, actor.UUID(), hex.EncodeToString(hash[:]))
-	if err != nil {
+	p := gatewayMCPPrincipal(actor)
+	if err := p.authorize(ctx); err != nil {
 		t.Fatal(err)
 	}
-	mux := http.NewServeMux()
-	mountMCP(mux)
-	host := httptest.NewServer(mux)
-	defer host.Close()
-	req, _ := http.NewRequest("POST", host.URL+"/mcp", strings.NewReader(`{}`))
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	res.Body.Close()
-	if res.StatusCode != 401 {
-		t.Fatal(res.StatusCode)
-	}
-	req, _ = http.NewRequest("POST", host.URL+"/mcp", strings.NewReader(`{}`))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Origin", "https://evil.example")
-	res, err = http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	res.Body.Close()
-	if res.StatusCode != 403 {
-		t.Fatal(res.StatusCode)
-	}
-	client := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "1"}, nil)
-	session, err := client.Connect(ctx, &mcp.StreamableClientTransport{Endpoint: host.URL + "/mcp", HTTPClient: &http.Client{Transport: assistantBearerTransport{token}, Timeout: 10 * time.Second}, DisableStandaloneSSE: true, MaxRetries: -1}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer session.Close()
+	session := mcpCatalogSession(t, p)
 	list, err := session.ListTools(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, tool := range list.Tools {
-		if tool.Name == "prepare_action" || tool.Name == "execute_action" {
-			t.Fatal("read token exposed write tool")
+		if tool.Annotations == nil || !tool.Annotations.ReadOnlyHint {
+			t.Fatal("read token exposed write tool", tool.Name)
 		}
 	}
-	result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "list_resources", Arguments: map[string]any{"q": "no-such-resource"}})
-	if err != nil || result.IsError {
-		t.Fatalf("read call %v %+v", err, result)
+	_, docs := mcpCatalogCall(t, session, map[string]any{})
+	if len(docs) != len(list.Tools) {
+		t.Fatal("authenticated catalog differs from tools/list")
 	}
-	_, _ = st.Pool.Exec(ctx, `UPDATE mcp_tokens SET revoked_at=now() WHERE id=$1`, id)
-	if _, err = session.ListTools(ctx, nil); err == nil {
-		t.Fatal("revoked token still works")
+	for _, name := range []string{"prepare_action", "execute_action", "action_prepare", "action_execute"} {
+		result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: map[string]any{}})
+		if err == nil && !result.IsError {
+			t.Fatal("read token invoked write tool", name)
+		}
+	}
+	for _, tc := range []struct {
+		old, canonical string
+		args           map[string]any
+	}{
+		{"list_resources", "resources_list", map[string]any{"q": "no-such-resource"}},
+		{"list_tags", "tags_list", map[string]any{}},
+		{"read_material", "material_read", map[string]any{"q": "no-such-material"}},
+		{"automation_status", "automation_status", map[string]any{"view": "overview"}},
+		{"automation_status", "automation_status", map[string]any{"view": "sources"}},
+	} {
+		var text string
+		for _, name := range []string{tc.old, tc.canonical} {
+			result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: tc.args})
+			if err != nil || result.IsError {
+				t.Fatalf("%s: %v %+v", name, err, result)
+			}
+			validateMCPSchema(t, mcpToolMetadata(tc.old).OutputSchema, result.StructuredContent)
+			current := result.Content[0].(*mcp.TextContent).Text
+			if text != "" && tc.old != "read_material" && text != current {
+				t.Fatal("alias changed response", name)
+			}
+			text = current
+		}
+	}
+	if _, err := st.Pool.Exec(ctx, `UPDATE admin_users SET status='disabled' WHERE id=$1`, actor.UUID()); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"mcp_list", "tags_list", "list_tags"} {
+		res, err := session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: map[string]any{}})
+		if err != nil || !res.IsError {
+			t.Fatalf("disabled service identity still works: %s %v", name, err)
+		}
 	}
 }
 func TestMCPPrivateNetworkBlocked(t *testing.T) {

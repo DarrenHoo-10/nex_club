@@ -30,7 +30,7 @@ type handler struct {
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rel := path.Clean("/" + r.URL.Path)
-	if rel == "/mcp" || rel == "/api" || strings.HasPrefix(rel, "/api/") || rel == "/health" || strings.HasPrefix(rel, "/health/") {
+	if rel == "/mcp" || strings.HasPrefix(rel, "/mcp/") || rel == "/api" || strings.HasPrefix(rel, "/api/") || rel == "/health" || strings.HasPrefix(rel, "/health/") {
 		h.next.ServeHTTP(w, r)
 		return
 	}

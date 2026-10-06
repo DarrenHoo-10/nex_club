@@ -1,36 +1,32 @@
 # Nex Club 内容管理插件
 
-一个 Codex 插件，包含 Nex Club MCP 连接、`manage-content` 内容管理 Skill 和 [`import-tutorial`](skills/import-tutorial/SKILL.md) 教程录入 Skill。讨论与写作发生在现有 AI 对话中；Nex Club 服务端负责资源与采集命令，不运行一套独立聊天模型。
+一个 Codex 插件，包含 Nex Club MCP 连接、已有 `manage-content` 内容管理 Skill 和 [`import-tutorial`](skills/import-tutorial/SKILL.md) 教程录入 Skill。本次仅迁移 MCP 接入，不修改或同步 Skill。
 
-## 连接本地项目
+## 通过 Nex MCP 网关连接
 
-1. 打开已部署的 [Nex Club](https://club.nexorai.com.cn)，进入 [后台 MCP 接入](https://club.nexorai.com.cn/admin/automation/mcp)。
-2. 在后台「自动化 → MCP 接入」创建令牌。默认只读；需要 AI 准备操作时打开准备权限，需要在 AI 客户端执行时再打开执行权限。
-3. 把令牌放入启动 Codex 的环境变量 `NEX_CLUB_MCP_TOKEN`，确保 Codex 进程继承该变量。不要写进插件文件、Git 或聊天内容。
+1. 使用运维提供的 **Nex MCP 网关令牌**，放入启动 Codex 的环境变量 `NEX_MCP_TOKEN`，确保 Codex 进程继承它。不要把令牌写进插件文件、Git 或聊天。
+2. `.mcp.json` 连接 `https://mcp.nexorai.com.cn/mcp`。Club 原来的 `/mcp` 返回 410，旧 `NEX_CLUB_MCP_TOKEN` 不再使用。不要把网关令牌发给 Club 公网地址。
+3. 确认运维已完成 [只读上游接入](gateway/README.md)。仓库里有配置示例不代表生产已部署或登记。
 4. 在仓库根目录把本地市场加入 Codex，再安装：
+   ```sh
+   codex plugin marketplace add .
+   codex plugin add nex-club@nex-club-local
+   ```
 
-```sh
-codex plugin marketplace add .
-codex plugin add nex-club@nex-club-local
-```
+安装后新建对话加载插件。已有网关连接的客户端可直接使用其 Nex Club 上游，避免重复配置。网关工具带命名空间，请从实际目录发现，不照搬旧直连工具名。客户端默认对所有网关工具询问授权，不对网关其他项目批量自动放行。
 
-也可以在应用的插件目录中找到本项目提供的 Nex Club。安装后新建对话加载插件。首次可以要求：“用 Nex Club 插件看看有哪些草稿，先不修改。”
+## 范围与使用
 
-`.mcp.json` 默认连接 `https://club.nexorai.com.cn/mcp`。本地开发时，可将 `url` 改为 `http://localhost:8089/mcp` 后再打包/安装；不要把令牌写入配置。
+首次只开放查询；**只读仍能读取草稿和隐藏内容，不等于公开文章**，只有获准访问这些内容的网关用户才能使用。
 
-## 使用
-
+- “用 Nex Club 上游看看有哪些草稿，先不修改。”
 - “这份素材值得收录吗？先和我讨论文章角度。”
-- “用 import-tutorial 把这个链接录入 AI教程，保留全文、加粗、代码和图片，先保存草稿。”
-- “把这份文档整理成 AI教程，保留作者与来源，先给我预览。”
-- “把我们讨论的内容整理成教程草稿，展示预览。”
-- “这份预览确认无误，发布这一版。”
 - “看看哪些加工任务失败了，告诉我原因。”
 
-读工具默认允许；准备、网页读取和执行工具默认由客户端询问授权。执行还需要服务端令牌权限与匹配的预览摘要。只允许准备的连接可以在后台完成最终确认。
+服务的 `mcp_list` 提供按权限生成的参数、返回字段、示例和副作用。只读规范名为 `resources_list`、`resource_get`、`tags_list`、`automation_status`、`material_read`、`url_read`、`action_get`；内部保留旧名兼容，但网关白名单仅开放规范名。
 
-`import-tutorial` 会查重并核对原文格式；`read_url` 的纯文本摘录不足以证明完整排版。文档解析与图片上传不属于本插件的 MCP 能力，缺失时会明确说明依赖。录入默认止于草稿，发布需要用户对具体版本的明确授权。
+网关通道不能准备、保存或执行内容操作，即使客户端加载了已有写入 Skill 也不能绕过服务端限制。编辑、发布和既有操作确认继续在正常登录的 Club 后台进行。写入仍需先展示预览并得到用户明确授权；不会因为网关令牌有效就自动获得写权限。
 
-本版使用个人 Bearer 令牌和 Streamable HTTP，适用于本地 Codex / 支持此鉴权方式的客户端。没有 OAuth 登录；不是已经提交到公共插件商店的版本。令牌 30 天过期，随时可在后台撤销。
+`read_url` 的纯文本摘录不足以证明完整排版；文档解析与图片上传也不是此 MCP 的能力。现有 Skill 的描述不代表这些能力已由本次只读网关提供。
 
-插件采用官方仍支持的 Codex 兼容格式 `.codex-plugin/plugin.json` + `.mcp.json`，与当前本地安装器一致。参见 [插件打包文档](https://developers.openai.com/plugins/build/plugins) 和 [插件 MCP 鉴权](https://developers.openai.com/api/docs/guides/agents-api/tools/plugins)。
+本插件采用 Codex 兼容格式 `.codex-plugin/plugin.json` + `.mcp.json`，不是已提交到公共插件商店的版本。参见 [插件打包文档](https://developers.openai.com/plugins/build/plugins) 和 [插件 MCP 鉴权](https://developers.openai.com/api/docs/guides/agents-api/tools/plugins)。

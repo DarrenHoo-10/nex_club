@@ -13,11 +13,14 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/darrenhoo/nex_club/server/db"
+	"github.com/darrenhoo/nex_club/server/internal/catalog"
 	"github.com/darrenhoo/nex_club/server/internal/editorial"
 	"github.com/darrenhoo/nex_club/server/internal/httpapi"
+	"github.com/darrenhoo/nex_club/server/internal/httpapi/admin"
 	"github.com/darrenhoo/nex_club/server/internal/httpapi/static"
 	"github.com/darrenhoo/nex_club/server/internal/ingest"
 	"github.com/darrenhoo/nex_club/server/internal/jobs"
+	"github.com/darrenhoo/nex_club/server/internal/mcptransport"
 	"github.com/darrenhoo/nex_club/server/internal/modelclient"
 	"github.com/darrenhoo/nex_club/server/internal/platform/clock"
 	"github.com/darrenhoo/nex_club/server/internal/platform/config"
@@ -129,7 +132,27 @@ func RunAPI(ctx context.Context, cfg config.Config) error {
 		Handler:           static.Wrap(httpx.Chain(mux), cfg.StaticDir),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
-	errCh := make(chan error, 1)
+	errCh := make(chan error, 2)
+	if cfg.MCPSocket != "" {
+		listener, err := mcptransport.Listen(cfg.MCPSocket)
+		if err != nil {
+			return fmt.Errorf("MCP socket: %w", err)
+		}
+		mcpCtx, cancel := context.WithCancel(ctx)
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			err := admin.ServeGatewayMCP(mcpCtx, listener, catalog.AdminID(cfg.MCPAdminID))
+			if mcpCtx.Err() == nil {
+				if err == nil {
+					err = errors.New("MCP listener stopped unexpectedly")
+				}
+				errCh <- err
+			}
+		}()
+		defer func() { cancel(); <-done }()
+	}
+	defer srv.Close()
 	go func() {
 		errCh <- srv.ListenAndServe()
 	}()
