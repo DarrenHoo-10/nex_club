@@ -15,11 +15,11 @@ func TestSeedMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(items) != 25 {
+	if len(items) != 26 {
 		t.Fatalf("items %d", len(items))
 	}
 	featured := 0
-	var claude, perplexity, ollama, tutorial seedItem
+	var claude, perplexity, ollama, tutorial, chatcut seedItem
 	for _, item := range items {
 		if item.Featured {
 			featured++
@@ -33,10 +33,15 @@ func TestSeedMapping(t *testing.T) {
 			ollama = item
 		case "claude-subscribe":
 			tutorial = item
+		case "chatcut-video-agent":
+			chatcut = item
 		}
 	}
-	if featured != 12 {
+	if featured != 13 {
 		t.Fatalf("featured %d", featured)
+	}
+	if len(chatcut.CoverURLs) != 1 || chatcut.CoverURLs[0] != "/covers/chatcut-1.jpg" || chatcut.Body == "" {
+		t.Fatalf("chatcut seed not parsed correctly: %+v", chatcut)
 	}
 	if claude.Identity == nil || *claude.Identity != "url:https://claude.ai" {
 		t.Fatalf("claude identity %v", claude.Identity)

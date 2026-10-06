@@ -38,16 +38,17 @@ func CheckImportAllowed(environment string, allowDemo bool) error {
 }
 
 type seedItem struct {
-	Kind     catalog.Kind
-	Slug     string
-	Title    string
-	Summary  string
-	Body     string
-	Details  catalog.Details
-	TagNames []string
-	Identity *string
-	AddedAt  time.Time
-	Featured bool
+	Kind      catalog.Kind
+	Slug      string
+	Title     string
+	Summary   string
+	Body      string
+	CoverURLs []string
+	Details   catalog.Details
+	TagNames  []string
+	Identity  *string
+	AddedAt   time.Time
+	Featured  bool
 }
 
 func (s *Service) ImportSeed(ctx context.Context, tx pgx.Tx, dir string) error {
@@ -309,7 +310,7 @@ func seedPayload(item seedItem, tagIDs map[string]uuid.UUID) (catalog.Payload, e
 		Aliases:      []string{},
 		Summary:      item.Summary,
 		BodyMarkdown: item.Body,
-		CoverURLs:    []string{},
+		CoverURLs:    item.CoverURLs,
 		TagIDs:       ids,
 		QualityScore: 0,
 		Details:      item.Details,

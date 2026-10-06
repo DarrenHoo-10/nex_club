@@ -91,6 +91,7 @@ type toolSeed struct {
 	Tags     []string  `json:"tags"`
 	Pricing  string    `json:"pricing"`
 	Featured bool      `json:"featured"`
+	Covers   []string  `json:"covers"`
 }
 
 func (row toolSeed) item() (seedItem, error) {
@@ -115,14 +116,15 @@ func (row toolSeed) item() (seedItem, error) {
 	}
 	identity := key.String()
 	return seedItem{
-		Kind:     catalog.KindTool,
-		Slug:     slug.String(),
-		Title:    row.Name,
-		Summary:  row.Desc,
-		TagNames: row.Tags,
-		Identity: &identity,
-		AddedAt:  row.AddedAt.UTC(),
-		Featured: row.Featured,
+		Kind:      catalog.KindTool,
+		Slug:      slug.String(),
+		Title:     row.Name,
+		Summary:   row.Desc,
+		CoverURLs: row.Covers,
+		TagNames:  row.Tags,
+		Identity:  &identity,
+		AddedAt:   row.AddedAt.UTC(),
+		Featured:  row.Featured,
 		Details: catalog.ToolDetails{
 			WebsiteURL: canon,
 			Pricing:    pricing,
@@ -146,16 +148,20 @@ func seedPricing(raw string) (catalog.Pricing, error) {
 }
 
 type tutorialSeed struct {
-	ID       string    `json:"id"`
-	AddedAt  time.Time `json:"addedAt"`
-	Title    string    `json:"title"`
-	Summary  string    `json:"summary"`
-	Tags     []string  `json:"tags"`
-	Level    string    `json:"level"`
-	Minutes  int       `json:"minutes"`
-	Steps    []string  `json:"steps"`
-	Notes    string    `json:"notes"`
-	Featured bool      `json:"featured"`
+	ID        string    `json:"id"`
+	AddedAt   time.Time `json:"addedAt"`
+	Title     string    `json:"title"`
+	Summary   string    `json:"summary"`
+	Tags      []string  `json:"tags"`
+	Level     string    `json:"level"`
+	Minutes   int       `json:"minutes"`
+	Steps     []string  `json:"steps"`
+	Notes     string    `json:"notes"`
+	Featured  bool      `json:"featured"`
+	Body      string    `json:"body"`
+	Covers    []string  `json:"covers"`
+	Author    string    `json:"author"`
+	SourceURL string    `json:"source_url"`
 }
 
 func (row tutorialSeed) item() (seedItem, error) {
@@ -170,19 +176,27 @@ func (row tutorialSeed) item() (seedItem, error) {
 	if err != nil {
 		return seedItem{}, err
 	}
+	var sourceURL *string
+	if row.SourceURL != "" {
+		sourceURL = &row.SourceURL
+	}
 	return seedItem{
-		Kind:     catalog.KindTutorial,
-		Slug:     slug.String(),
-		Title:    row.Title,
-		Summary:  row.Summary,
-		TagNames: row.Tags,
-		AddedAt:  row.AddedAt.UTC(),
-		Featured: row.Featured,
+		Kind:      catalog.KindTutorial,
+		Slug:      slug.String(),
+		Title:     row.Title,
+		Summary:   row.Summary,
+		Body:      row.Body,
+		CoverURLs: row.Covers,
+		TagNames:  row.Tags,
+		AddedAt:   row.AddedAt.UTC(),
+		Featured:  row.Featured,
 		Details: catalog.TutorialDetails{
-			Level:   level,
-			Minutes: row.Minutes,
-			Steps:   append([]string(nil), row.Steps...),
-			Notes:   row.Notes,
+			Level:     level,
+			Minutes:   row.Minutes,
+			Steps:     append([]string(nil), row.Steps...),
+			Notes:     row.Notes,
+			Author:    row.Author,
+			SourceURL: sourceURL,
 		},
 	}, nil
 }
@@ -206,6 +220,7 @@ type repoSeed struct {
 	Tags     []string  `json:"tags"`
 	Lang     string    `json:"lang"`
 	Featured bool      `json:"featured"`
+	Covers   []string  `json:"covers"`
 }
 
 func (row repoSeed) item() (seedItem, error) {
@@ -217,13 +232,14 @@ func (row repoSeed) item() (seedItem, error) {
 		return seedItem{}, apperr.Invalid("缺少加入时间", apperr.FieldError{Field: "addedAt", Code: "required"})
 	}
 	return seedItem{
-		Kind:     catalog.KindRepo,
-		Slug:     slug.String(),
-		Title:    row.Repo,
-		Summary:  row.Desc,
-		TagNames: row.Tags,
-		AddedAt:  row.AddedAt.UTC(),
-		Featured: row.Featured,
+		Kind:      catalog.KindRepo,
+		Slug:      slug.String(),
+		Title:     row.Repo,
+		Summary:   row.Desc,
+		CoverURLs: row.Covers,
+		TagNames:  row.Tags,
+		AddedAt:   row.AddedAt.UTC(),
+		Featured:  row.Featured,
 		Details: catalog.RepoDetails{
 			FullName: row.Repo,
 			Language: row.Lang,

@@ -52,6 +52,9 @@ export function toReaderModel(resource) {
   const notes = typeof details.notes === 'string' && details.notes.trim() ? details.notes : null
   const body = typeof resource.body_markdown === 'string' && resource.body_markdown.trim() ? resource.body_markdown : null
   const minutes = Number.isFinite(details.minutes) ? details.minutes : 0
+  const covers = Array.isArray(resource.cover_urls) && resource.cover_urls.length
+    ? resource.cover_urls
+    : Array.isArray(resource.covers) && resource.covers.length ? resource.covers : []
   return {
     title: resource.title || '',
     levelLabel: resource.card?.meta || LEVEL_LABEL[details.level] || '未知',
@@ -59,6 +62,8 @@ export function toReaderModel(resource) {
     bodyMarkdown: body,
     steps,
     notes,
+    cover: covers[0] || null,
+    author: details.author || null,
   }
 }
 
