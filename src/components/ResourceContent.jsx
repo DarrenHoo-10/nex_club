@@ -9,9 +9,20 @@ export default function ResourceContent({ resource, onOutbound }) {
   const href = safeHttpUrl(resource.card?.href)
     || safeHttpUrl(resource.details?.website_url)
     || safeHttpUrl(resource.details?.source_url)
+  const covers = Array.isArray(resource.cover_urls) && resource.cover_urls.length
+    ? resource.cover_urls
+    : Array.isArray(resource.covers) ? resource.covers : []
+  const heroCover = covers[0] || null
+  const author = resource.details?.author || null
 
   return <>
+    {heroCover && (
+      <div className="resource-modal-cover">
+        <img src={heroCover} alt={resource.title || ''} loading="lazy" />
+      </div>
+    )}
     <div className="resource-modal-meta tags">
+      {author && <span className="pill author-pill">✍️ {author}</span>}
       {resource.card?.meta && <span className="pill">{resource.card.meta}</span>}
       {(resource.tags || []).filter((tag) => tag.name !== resource.card?.meta).map((tag) => <span className="pill" key={tag.slug}>{tag.name}</span>)}
     </div>
