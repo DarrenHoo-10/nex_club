@@ -6,6 +6,8 @@ RUN apk add --no-cache ca-certificates \
 WORKDIR /app
 COPY bin/ ./
 COPY dist/ ./dist/
+# Windows uploads keep directories private. The runtime user must be able to read them.
+RUN chmod -R a+rX /app/api /app/worker /app/nexadm /app/dist
 ENV NEX_HTTP_ADDR=:8080 NEX_STATIC_DIR=/app/dist TZ=UTC
 USER 10001:10001
 EXPOSE 8080
