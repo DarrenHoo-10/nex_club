@@ -1,4 +1,4 @@
-import { Component } from 'react'
+import { Children, Component, isValidElement } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { safeHttpUrl } from '../api/view.js'
@@ -32,6 +32,51 @@ function markdownUrl(value) {
   return safeHttpUrl(value)
 }
 
+function mediaSrc(src) {
+  const safe = safeHttpUrl(src)
+  if (safe) return safe
+  if (/^\/(?!\/)/.test(src || '')) return src
+  return ''
+}
+
+// A markdown image whose address is a video file plays inline.
+// The image title, when it is an http(s) URL, is the poster frame.
+export function isDirectVideo(url) {
+  try {
+    return /\.(mp4|webm|m4v|mov)$/i.test(new URL(url, 'https://local.invalid').pathname)
+  } catch {
+    return false
+  }
+}
+
+function image({ src, alt, title }) {
+  const safe = mediaSrc(src)
+  if (!safe) return null
+  if (isDirectVideo(safe)) {
+    const poster = safeHttpUrl(title)
+    return (
+      <video
+        src={safe}
+        poster={poster || undefined}
+        controls
+        playsInline
+        preload="metadata"
+        aria-label={alt || undefined}
+      />
+    )
+  }
+  return <img src={safe} alt={alt || ''} loading="lazy" />
+}
+
+function paragraph({ children }) {
+  const nodes = Children.toArray(children).filter((child) => typeof child !== 'string' || child.trim() !== '')
+  const only = nodes.length === 1 && isValidElement(nodes[0]) ? nodes[0] : null
+  if (only?.type === image && isDirectVideo(mediaSrc(only.props.src))) {
+    return <div className="reader-video">{only}</div>
+  }
+  return <p>{children}</p>
+}
+
 export default function MarkdownBody({ source }) {
   return (
     <MarkdownErrorBoundary source={source}>
@@ -46,11 +91,8 @@ export default function MarkdownBody({ source }) {
               if (!safe) return <span>{children}</span>
               return <a href={safe} target="_blank" rel="nofollow noopener noreferrer">{children}</a>
             },
-            img({ src, alt }) {
-              const safe = safeHttpUrl(src)
-              if (!safe && !/^\/(?!\/)/.test(src || '')) return null
-              return <img src={safe || src} alt={alt || ''} loading="lazy" />
-            },
+            p: paragraph,
+            img: image,
             table({ children }) {
               return <div className="reader-table" role="region" aria-label="表格（可横向滚动）" tabIndex={0}><table>{children}</table></div>
             },

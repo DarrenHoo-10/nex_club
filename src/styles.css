@@ -309,7 +309,8 @@ button.pill:hover { color: var(--text); background: var(--glass-hi); }
 .reader-body pre { margin: 1.2em 0; padding: 16px 20px; border-radius: 14px; background: rgba(10, 15, 30, .6); border: 1px solid var(--glass-border); overflow-x: auto; font-family: var(--mono); font-size: 13.5px; line-height: 1.6; }
 .reader-body code { font-family: var(--mono); font-size: .9em; padding: 2px 6px; border-radius: 6px; background: var(--pill-bg); border: 1px solid var(--glass-border); }
 .reader-body pre code { padding: 0; border: none; background: none; }
-.reader-body img { display: block; max-width: 100%; height: auto; margin: 1.6em auto; border-radius: 14px; box-shadow: 0 4px 24px rgba(0, 0, 0, .25); border: 1px solid var(--glass-border); }
+.reader-body :is(img, video) { display: block; max-width: 100%; height: auto; margin: 1.6em auto; border-radius: 14px; box-shadow: 0 4px 24px rgba(0, 0, 0, .25); border: 1px solid var(--glass-border); }
+.reader-body video { width: 100%; background: #111318; }
 .reader-plain { white-space: pre-wrap; margin: 0; }
 .reader-fallback { margin: 0 0 28px; }
 .detail { display: grid; gap: 18px; padding-top: 28px; }
@@ -426,7 +427,7 @@ button.pill:hover { color: var(--text); background: var(--glass-hi); }
 .reader-body th, .reader-body td { border-bottom-color: color-mix(in srgb, var(--muted) 18%, transparent); border-right: 1px solid color-mix(in srgb, var(--muted) 12%, transparent); line-height: 1.8; }
 .reader-body th { background: rgba(240, 243, 249, .8); color: var(--text); font-weight: 650; }
 .reader-body :is(th, td):last-child { border-right: 0; }
-.reader-body img { height: auto; }
+.reader-body :is(img, video) { height: auto; }
 .reader-note { line-height: 1.9; }
 .reader-note p { color: var(--text); }
 @media (prefers-color-scheme: dark) {

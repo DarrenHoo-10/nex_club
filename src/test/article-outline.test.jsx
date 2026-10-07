@@ -70,6 +70,25 @@ it('keeps local images and fragment links, rejecting unsafe URL schemes', () => 
   expect(screen.queryByRole('img', { name: '坏图' })).not.toBeInTheDocument()
 })
 
+it('plays a markdown video file and keeps ordinary images as images', () => {
+  const poster = 'https://cdn.example.com/poster.jpg'
+  const file = 'https://cdn.example.com/clip.mp4?tag=29'
+  const { container } = render(<MarkdownBody source={`![工作台动效](${file} "${poster}")\n\n![静帧](https://cdn.example.com/frame.jpg)\n\n![坏视频](javascript:alert(1).mp4)\n\n![本地视频](/covers/demo.webm)`} />)
+  const videos = [...container.querySelectorAll('video')]
+  expect(videos).toHaveLength(2)
+  expect(videos[0]).toHaveAttribute('src', file)
+  expect(videos[0]).toHaveAttribute('poster', poster)
+  expect(videos[0]).toHaveAttribute('controls')
+  expect(videos[0]).toHaveAttribute('aria-label', '工作台动效')
+  expect(videos[0].parentElement.tagName).toBe('DIV')
+  expect(videos[0].closest('p')).toBeNull()
+  expect(videos[1]).toHaveAttribute('src', '/covers/demo.webm')
+  expect(videos[1].hasAttribute('poster')).toBe(false)
+  expect(screen.getByRole('img', { name: '静帧' })).toHaveAttribute('src', 'https://cdn.example.com/frame.jpg')
+  expect(screen.queryByRole('img', { name: '坏视频' })).not.toBeInTheDocument()
+  expect(container.querySelector('video[src^="javascript:"]')).toBeNull()
+})
+
 function renderTutorial(client) {
   const router = createMemoryRouter(createRoutes({ publicClient: client }), { initialEntries: ['/tutorials?q=ChatCut&sort=latest'] })
   render(<RouterProvider router={router} />)
