@@ -68,6 +68,14 @@ function image({ src, alt, title }) {
   return <img src={safe} alt={alt || ''} loading="lazy" />
 }
 
+// Loose items arrive as a blank line, then a paragraph, then a blank line.
+// pre-line on the item would keep that wrapper break and park the marker
+// on an empty line above the text. A tight item's own soft break stays.
+function listItem({ children }) {
+  const nodes = Children.toArray(children).filter((child) => typeof child !== 'string' || child.trim() !== '')
+  return <li>{nodes}</li>
+}
+
 function paragraph({ children }) {
   const nodes = Children.toArray(children).filter((child) => typeof child !== 'string' || child.trim() !== '')
   const only = nodes.length === 1 && isValidElement(nodes[0]) ? nodes[0] : null
@@ -92,6 +100,7 @@ export default function MarkdownBody({ source }) {
               return <a href={safe} target="_blank" rel="nofollow noopener noreferrer">{children}</a>
             },
             p: paragraph,
+            li: listItem,
             img: image,
             table({ children }) {
               return <div className="reader-table" role="region" aria-label="表格（可横向滚动）" tabIndex={0}><table>{children}</table></div>

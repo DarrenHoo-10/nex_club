@@ -19,10 +19,25 @@ it('preserves paragraph breaks, headings, emphasis, lists, quotes, tables and li
   expect(container.querySelector('strong')).toHaveTextContent('重点')
   expect(container.querySelector('em')).toHaveTextContent('强调')
   expect(container.querySelectorAll('ul > li')).toHaveLength(2)
+  expect([...container.querySelectorAll('ul > li')].every((item) => [...item.childNodes].every((node) => node.nodeType !== Node.TEXT_NODE || node.textContent.trim() !== ''))).toBe(true)
   expect(container.querySelector('blockquote')).toHaveTextContent('提示内容')
   expect(screen.getByRole('table')).toBeInTheDocument()
   expect(screen.getByRole('region', { name: '表格（可横向滚动）' })).toHaveAttribute('tabindex', '0')
   expect(container.querySelector('pre code').textContent).toBe('const x = 1\n  console.log(x)\n')
+})
+
+it('puts a loose list marker on the item text and keeps a tight item soft break', () => {
+  const loose = render(<MarkdownBody source={'- **用户质量高**：付费意愿极强。\n\n- **信任积累快**：持续输出干货。'} />)
+  const items = [...loose.container.querySelectorAll('ul > li')]
+  expect(items).toHaveLength(2)
+  for (const item of items) {
+    expect(item.querySelector(':scope > p')).not.toBeNull()
+    expect([...item.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '')).toBe(false)
+  }
+  loose.unmount()
+
+  const tight = render(<MarkdownBody source={'- 第一行\n  第二行\n- 下一项'} />)
+  expect(tight.container.querySelector('li').textContent).toBe('第一行\n第二行')
 })
 
 it('assigns stable unique Chinese heading IDs without treating fenced code as headings', () => {
