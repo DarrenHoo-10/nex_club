@@ -244,6 +244,7 @@ export default function ResourceEditorPage() {
         navigate(`/resources/${next.slug}`)
       }
     } catch (err) {
+      setPreview(null)
       handleWriteError(err)
     } finally {
       setSaving(false)
@@ -379,7 +380,15 @@ export default function ResourceEditorPage() {
           ))}
         </div>
       </form>
-      {preview && <ResourcePreview resource={preview} banner={banner} onClose={() => setPreview(null)} />}
+      {preview && (
+        <ResourcePreview
+          resource={preview}
+          banner={banner}
+          onClose={() => setPreview(null)}
+          onPublish={isNew ? undefined : onPublish}
+          canPublish={!isNew && !dirty && !saving && Boolean(form.hasDraft)}
+        />
+      )}
       {!isNew && revisions.length > 0 && (
         <div className="admin-form">
           <h2>修订</h2>

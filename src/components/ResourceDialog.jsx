@@ -2,7 +2,7 @@ import { useId, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import ArticleOutline, { useReadingNavigation } from './ArticleOutline.jsx'
 
-export default function ResourceDialog({ title, eyebrow, onClose, closeLabel = '收起', toolbar, busy = false, reading = false, readingKey, contentVersion, children }) {
+export default function ResourceDialog({ title, eyebrow, onClose, closeLabel = '收起', toolbar, actions, busy = false, reading = false, readingKey, contentVersion, children }) {
   const dialog = useRef(null)
   const content = useRef(null)
   const titleId = useId()
@@ -42,7 +42,10 @@ export default function ResourceDialog({ title, eyebrow, onClose, closeLabel = '
     >
       <div className="resource-modal-head">
         <span className="eyebrow">{eyebrow}</span>
-        <button type="button" className="pill resource-modal-close" onClick={onClose}><span aria-hidden="true">×</span>{closeLabel}</button>
+        <div className="resource-modal-actions">
+          {actions}
+          <button type="button" className="pill resource-modal-close" onClick={onClose}><span aria-hidden="true">×</span>{closeLabel}</button>
+        </div>
       </div>
       {toolbar}
       {hasOutline && <details className="reader-mobile-outline" ref={mobileOutline}>
