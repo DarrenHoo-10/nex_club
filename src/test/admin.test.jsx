@@ -194,9 +194,9 @@ describe('admin', () => {
     expect(document.querySelector('[onerror]')).toBeNull()
     expect(window.__xss).toBeUndefined()
 
-    await user.click(screen.getByRole('button', { name: '返回编辑' }))
-    await user.click(screen.getByRole('button', { name: '发布' }))
-    await user.click(screen.getByRole('button', { name: '确认发布' }))
+    const dialog = screen.getByRole('dialog', { name: '仅正文教程' })
+    await user.click(within(dialog).getByRole('button', { name: '发布' }))
+    await user.click(within(dialog).getByRole('button', { name: '确认发布' }))
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/resources/only-markdown')
     })
@@ -206,6 +206,54 @@ describe('admin', () => {
     expect(screen.queryByRole('link', { name: '坏链接' })).not.toBeInTheDocument()
     expect(document.querySelector('script')).toBeNull()
     expect(window.__xss).toBeUndefined()
+  })
+
+  it('still publishes from the editor after closing preview', async () => {
+    const user = userEvent.setup()
+    const body = '完整教程正文用于核对显示'
+    const adminApi = createAdminFixture()
+    await adminApi.login('admin', 'correct-password')
+    const seeded = adminApi.seed({
+      kind: 'tutorial',
+      slug: 'only-markdown',
+      status: 'draft',
+      draft: {
+        title: '仅正文教程',
+        aliases: [],
+        summary: '一篇只有正文的教程',
+        body_markdown: body,
+        cover_urls: [],
+        primary_category_id: null,
+        tag_ids: [],
+        quality_score: 1,
+        recommendation_reason: '',
+        details: { level: 'beginner', minutes: 3, steps: [], author: '', source_url: null, notes: '' },
+      },
+    })
+    const publicClient = {
+      async listResources() {
+        return { items: adminApi.publishedSnapshot(), next_cursor: null, has_more: false, total: null, effective_sort: 'recommended', ranking_version: null, ranking_computed_at: null, applied_query: { kind: 'tutorial', q: '', tags: [], sort: 'recommended' } }
+      },
+      async getBySlug(slug) {
+        const found = adminApi.publishedSnapshot().find((item) => item.slug === slug)
+        if (!found) throw new ApiError({ status: 404, code: 'not_found', message: 'missing' })
+        return found
+      },
+      async listTags() { return { tags: [] } },
+      async listFeatured() { return { items: [] } },
+      async postEvents() { return { accepted: 1, duplicate: 0 } },
+    }
+    const router = renderAdmin(`/admin/resources/${seeded.id}`, { adminApi, publicClient })
+    await screen.findByLabelText('简介')
+    await user.click(screen.getByRole('button', { name: '预览' }))
+    await user.click(screen.getByRole('button', { name: '返回编辑' }))
+    await user.click(screen.getByRole('button', { name: '发布' }))
+    await user.click(screen.getByRole('button', { name: '确认发布' }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/resources/only-markdown')
+    })
+    expect(screen.getByRole('heading', { name: '仅正文教程' })).toBeInTheDocument()
+    expect(screen.getByText('完整教程正文用于核对显示')).toBeInTheDocument()
   })
 
   it('makes slug read-only after publication', async () => {
@@ -238,6 +286,7 @@ describe('admin', () => {
     await user.click(screen.getByRole('button', { name: '预览', exact: true }))
     const dialog = await screen.findByRole('dialog', { name: '我的新工具' })
     expect(within(dialog).getByText('当前编辑内容 · 尚未保存')).toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: '发布' })).not.toBeInTheDocument()
     expect(within(dialog).getByText('尚未保存的工具介绍')).toBeInTheDocument()
     expect(within(dialog).getByRole('link', { name: /example.com\/new-tool/ })).toHaveAttribute('href', 'https://example.com/new-tool')
     await user.click(within(dialog).getByRole('button', { name: '卡片效果' }))
@@ -270,6 +319,7 @@ describe('admin', () => {
     const dialog = await screen.findByRole('dialog', { name: '示例仓库' })
     expect(within(dialog).getByText('新改的仓库介绍')).toBeInTheDocument()
     expect(within(dialog).getByRole('link', { name: /github.com\/sample\/new/ })).toHaveAttribute('href', 'https://github.com/sample/new')
+    expect(within(dialog).getByRole('button', { name: '发布' })).toBeDisabled()
     await user.click(within(dialog).getByRole('button', { name: '返回编辑' }))
     expect(name).toHaveValue('sample/new')
     expect(screen.getByRole('button', { name: '发布', exact: true })).toBeDisabled()

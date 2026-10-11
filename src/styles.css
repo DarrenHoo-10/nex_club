@@ -344,6 +344,11 @@ button.pill:hover { color: var(--text); background: var(--glass-hi); }
 .resource-modal::backdrop { background: rgba(14, 20, 40, .32); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .resource-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px 10px 32px; flex: none; }
 .resource-modal-head .eyebrow { margin: 0; color: var(--accent); }
+.resource-modal-actions { display: flex; align-items: center; gap: 8px; }
+.resource-modal-publish:disabled { opacity: .45; }
+.preview-publish-confirm { position: absolute; z-index: 3; top: 68px; right: 24px; width: min(420px, calc(100% - 48px)); padding: 22px; border-radius: 20px; box-shadow: 0 16px 50px rgba(14, 24, 64, .2); }
+.preview-publish-confirm h3 { margin: 0 0 8px; font-size: 16px; }
+.preview-publish-confirm p { margin: 0; color: var(--muted); line-height: 1.7; }
 .resource-modal-close { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; flex: none; }
 .resource-modal-close span { font-size: 24px; font-weight: 300; line-height: 1; }
 .resource-modal-content { padding: 10px 32px 32px; overflow-y: auto; overscroll-behavior: contain; overflow-wrap: anywhere; }
